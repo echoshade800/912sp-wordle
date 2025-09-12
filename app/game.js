@@ -169,13 +169,11 @@ export default function GameScreen() {
       const finalTime = endTime - startTime;
       
       if (gameStatus === 'won') {
-        completeGame(gameStatus === 'won', finalTime).then((earnedCoins) => {
+        completeGame(true, finalTime).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
       }
     }
-  }
-  )
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
@@ -457,6 +455,9 @@ export default function GameScreen() {
       flipAnimations.forEach(anim => anim.setValue(0));
       greatTextScale.setValue(0.8);
       
+      // Reset coins display for next level
+      setCoinsEarnedForDisplay(0);
+      
       // Start new game
       const newWord = getRandomWord();
       setTargetWord(newWord);
@@ -597,7 +598,11 @@ export default function GameScreen() {
         
         // Set game as won but no coins for skipping
         setGameStatus('won');
-        setCoinsEarnedForDisplay(0); // No coins for skipping
+        
+        // Complete the game with skip flag
+        completeGame(true, finalTime, true).then((earnedCoins) => {
+          setCoinsEarnedForDisplay(earnedCoins || 0);
+        });
         
         // Start celebration after a short delay to show the answer
         setTimeout(() => {

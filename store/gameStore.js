@@ -85,13 +85,13 @@ const useGameStore = create((set, get) => ({
   },
   
   // Complete current game
-  completeGame: async (won, finalTime) => {
+  completeGame: async (won, finalTime, isBoosterSkip = false) => {
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) return;
     
     // Calculate coins earned based on which row the word was guessed
     let coinsEarned = 0;
-    if (won) {
+    if (won && !isBoosterSkip) {
       const guessedRow = currentGame.attempts; // 0-based index (0 = first row, 1 = second row, etc.)
       switch (guessedRow) {
         case 0: coinsEarned = 50; break; // First row
@@ -110,7 +110,7 @@ const useGameStore = create((set, get) => ({
       isWon: won,
       completionTime: finalTime,
       score: won ? Math.max(0, 100 - (currentGame.attempts * 10)) : 0,
-      coinsEarned: coinsEarned
+      coinsEarned
     };
     
     const newHistory = [completedGame, ...gameHistory].slice(0, 50); // Keep last 50 games
