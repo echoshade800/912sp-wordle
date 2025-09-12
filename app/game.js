@@ -988,7 +988,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 8,
     marginBottom: 4,
   },
   tile: {
