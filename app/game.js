@@ -1004,7 +1004,7 @@ const styles = StyleSheet.create({
   tileText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#374151',
   },
   keyboard: {
     paddingHorizontal: 4,
