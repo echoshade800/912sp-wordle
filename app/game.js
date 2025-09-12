@@ -796,7 +796,8 @@ export default function GameScreen() {
           onPress={handleSubmit}
           disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
         >
-          <Text style={styles.submitButtonText}>
+          <Text style={styles.starIcon}>⭐️</Text>
+          <Text style={[styles.priceText, coins < 25 && styles.disabledPriceText]}>
             {getSubmitButtonText()}
           </Text>
         </TouchableOpacity>
@@ -923,7 +924,9 @@ export default function GameScreen() {
               <Ionicons name="flame" size={72} color="#ff6b35" />
             </View>
             
-            <Text style={styles.gameOverSubtitle}>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={[styles.priceText, coins < 15 && styles.disabledPriceText]}>
               Keep your streak going or your score will be reset!
             </Text>
             
@@ -1094,6 +1097,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 6,
+  },
+  starIcon: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginRight: 2,
   },
   starIcon: {
     fontSize: 12,
