@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   submitButtonText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '900',
     color: 'white',
   },
