@@ -18,12 +18,258 @@ const GameRulesModal = ({ visible, onClose }) => {
       transparent={true}
       animationType="fade"
     >
-      <View style={styles.rulesModalOverlay}>
-        <View style={styles.rulesModal}>
-          <View style={styles.rulesHeader}>
-            <Text style={styles.rulesTitle}>Game Rules</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#666" />
+      <View style={styles.newRulesModalOverlay}>
+        <TouchableOpacity onPress={onClose} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={32} color="white" />
+        </TouchableOpacity>
+        
+        <View style={styles.wordleExample}>
+          <View style={styles.wordleLetters}>
+            <View style={[styles.wordleLetter, { backgroundColor: '#e91e63' }]}>
+              <Text style={styles.wordleLetterText}>W</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#ff9800' }]}>
+              <Text style={styles.wordleLetterText}>O</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#2196f3' }]}>
+              <Text style={styles.wordleLetterText}>R</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#9c27b0' }]}>
+              <Text style={styles.wordleLetterText}>D</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#8bc34a' }]}>
+              <Text style={styles.wordleLetterText}>L</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#ff5722' }]}>
+              <Text style={styles.wordleLetterText}>E</Text>
+            </View>
+            <View style={[styles.wordleLetter, { backgroundColor: '#f44336' }]}>
+              <Text style={styles.wordleLetterText}>!</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.howToPlayCard}>
+          <Text style={styles.howToPlayTitle}>HOW TO PLAY:</Text>
+          
+          <View style={styles.ruleItem}>
+            <Text style={styles.ruleNumber}>6</Text>
+            <Text style={styles.ruleText}>You have 6 tries to guess the word.</Text>
+          </View>
+          
+          <View style={styles.ruleItem}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#8bc34a' }]}>
+              <Text style={styles.ruleIconText}>Y</Text>
+            </View>
+            <Text style={styles.ruleText}>The colors of the letters will change to show if they are correct</Text>
+          </View>
+          
+          <View style={styles.ruleItem}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#ff9800' }]}>
+              <Ionicons name="search" size={20} color="white" />
+            </View>
+            <Text style={styles.ruleText}>Use "Hint" to reveal one correct letter.</Text>
+          </View>
+          
+          <View style={styles.ruleItem}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#e91e63' }]}>
+              <Ionicons name="target" size={20} color="white" />
+            </View>
+            <Text style={styles.ruleText}>Use "Dart" to remove three incorrect letters.</Text>
+          </View>
+          
+          <View style={styles.ruleItem}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#2196f3' }]}>
+              <Ionicons name="play-forward" size={20} color="white" />
+            </View>
+            <Text style={styles.ruleText}>Use "Skip" to skip the current word with no penalties.</Text>
+          </View>
+        </View>
+
+        <View style={styles.exampleSection}>
+          <Text style={styles.exampleTitle}>EXAMPLE:</Text>
+          
+          <View style={styles.exampleLabels}>
+            <View style={styles.labelContainer}>
+              <Text style={styles.labelText}>Letter in{'\n'}correct{'\n'}spot</Text>
+              <View style={styles.labelArrow} />
+            </View>
+            <View style={styles.labelContainer}>
+              <Text style={styles.labelText}>Letter in{'\n'}the wrong{'\n'}spot</Text>
+              <View style={styles.labelArrow} />
+            </View>
+          </View>
+          
+          <View style={styles.exampleTiles}>
+            <View style={[styles.exampleTile, { backgroundColor: '#8bc34a' }]}>
+              <Text style={styles.exampleTileText}>S</Text>
+            </View>
+            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
+              <Text style={styles.exampleTileText}>C</Text>
+            </View>
+            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
+              <Text style={styles.exampleTileText}>O</Text>
+            </View>
+            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
+              <Text style={styles.exampleTileText}>R</Text>
+            </View>
+            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
+              <Text style={styles.exampleTileText}>E</Text>
+            </View>
+          </View>
+          
+          <View style={styles.bottomLabel}>
+            <View style={styles.bottomLabelArrow} />
+            <Text style={styles.bottomLabelText}>Letter not{'\n'}in word</Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const BACKGROUND_COLORS = [
+  '#D8E2DC', // 第1关：浅灰绿色
+  '#FFE5D9', // 第2关：柔和杏桃粉
+  '#FFCAD4', // 第3关：浅樱花粉
+  '#F4ACB7', // 第4关：暖玫瑰粉
+  '#9D8189', // 第5关：灰紫玫瑰
+  '#B5EAD7', // 第6关：浅薄荷绿
+  '#C7CEEA', // 第7关：柔和薰衣草紫
+  '#E2F0CB', // 第8关：浅嫩芽绿
+  '#FFDAC1', // 第9关：奶油杏色
+  '#E0BBE4', // 第10关：淡紫丁香
+];
+
+const { width, height } = Dimensions.get('window');
+const GRID_SIZE = Math.min(width - 60, 320);
+const TILE_SIZE = (GRID_SIZE - 30) / 5;
+
+const KEYBOARD_LAYOUT = [
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+];
+
+export default function GameScreen() {
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
+  const [targetWord, setTargetWord] = useState('');
+  const [guesses, setGuesses] = useState(Array(6).fill(''));
+  const [currentGuess, setCurrentGuess] = useState('');
+  const [currentRow, setCurrentRow] = useState(0);
+  const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
+  const [keyboardStatus, setKeyboardStatus] = useState({});
+  const [startTime] = useState(Date.now());
+  const [hintUsed, setHintUsed] = useState(false);
+  const [hintPosition, setHintPosition] = useState(-1);
+  const gameStarted = useRef(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: confetti, 3: modal
+  const [flipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
+  const [confettiAnimations] = useState(Array.from({ length: 20 }, () => ({
+    translateY: new Animated.Value(-100),
+    translateX: new Animated.Value(0),
+    opacity: new Animated.Value(1),
+    rotate: new Animated.Value(0)
+  })));
+  const [greatTextScale] = useState(new Animated.Value(0.8));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipRowAnimations] = useState(Array.from({ length: 6 }, () => 
+    Array.from({ length: 5 }, () => new Animated.Value(0))
+  ));
+  const [flippedTiles, setFlippedTiles] = useState(new Set());
+  const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
+
+  // Booster modal states
+  const [showBoosterModal, setShowBoosterModal] = useState(false);
+  const [selectedBooster, setSelectedBooster] = useState(null);
+  const [modalOpacity] = useState(new Animated.Value(0));
+  const [modalScale] = useState(new Animated.Value(0.95));
+
+  // Game over modal states
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [gameOverOpacity] = useState(new Animated.Value(0));
+  const [gameOverScale] = useState(new Animated.Value(0.95));
+  
+  // Rules modal state
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+  const showGameOverDialog = () => {
+    setShowGameOverModal(true);
+    
+    // Show modal animation
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeGameOverModal = () => {
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 0.95,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowGameOverModal(false);
+    });
+  };
+
+  const handleRetry = async () => {
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
+      return;
+    }
+
+    // Deduct coins
+    const used = await useBooster('retry', 35);
+    if (!used) return;
+
+    // Close modal
+    closeGameOverModal();
+
+    // Reset game state but keep keyboard colors
+    setGuesses(Array(6).fill(''));
+    setCurrentGuess('');
+    setCurrentRow(0);
+    setGameStatus('playing');
+    setIsFlipping(false);
+    setFlippedTiles(new Set());
+    
+    // Reset flip animations
+    flipRowAnimations.forEach(rowAnims => 
+      rowAnims.forEach(anim => anim.setValue(0))
+    );
+  };
+
+  const handleNoThanks = () => {
+    closeGameOverModal();
+    router.back();
+  };
+
+  const handleInfoPress = () => {
+    setShowRulesModal(true);
+  };
+
+  // Booster states
+  const [lockedPositions, setLockedPositions] = useState(new Set());
+  const [disabledKeys, setDisabledKeys] = useState(new Set());
             </TouchableOpacity>
           </View>
           
@@ -1718,5 +1964,159 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // New rules modal styles
+  newRulesModalOverlay: {
+    flex: 1,
+    backgroundColor: '#4a90a4',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  wordleExample: {
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 30,
+  },
+  wordleLetters: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  wordleLetter: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wordleLetterText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  howToPlayCard: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 30,
+  },
+  howToPlayTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 20,
+    letterSpacing: 2,
+  },
+  ruleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  ruleNumber: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'white',
+    marginRight: 16,
+    width: 60,
+  },
+  ruleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  ruleIconText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  ruleText: {
+    fontSize: 16,
+    color: 'white',
+    flex: 1,
+    lineHeight: 22,
+  },
+  exampleSection: {
+    alignItems: 'center',
+  },
+  exampleTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 20,
+    letterSpacing: 2,
+  },
+  exampleLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  labelContainer: {
+    alignItems: 'center',
+  },
+  labelText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  labelArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: 'white',
+  },
+  exampleTiles: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  exampleTile: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  exampleTileText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  bottomLabel: {
+    alignItems: 'center',
+  },
+  bottomLabelArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'white',
+    marginBottom: 8,
+  },
+  bottomLabelText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
