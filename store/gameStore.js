@@ -89,12 +89,28 @@ const useGameStore = create((set, get) => ({
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) return;
     
+    // Calculate coins based on which row the player guessed correctly
+    let coinsEarned = 0;
+    if (won) {
+      const guessRow = currentGame.attempts; // 0-based, so row 0 = first guess
+      switch (guessRow) {
+        case 0: coinsEarned = 50; break; // First row
+        case 1: coinsEarned = 40; break; // Second row
+        case 2: coinsEarned = 30; break; // Third row
+        case 3: coinsEarned = 20; break; // Fourth row
+        case 4: coinsEarned = 15; break; // Fifth row
+        case 5: coinsEarned = 10; break; // Sixth row
+        default: coinsEarned = 10; break;
+      }
+    }
+    
     const completedGame = {
       ...currentGame,
       isComplete: true,
       isWon: won,
       completionTime: finalTime,
-      score: won ? Math.max(0, 100 - (currentGame.attempts * 10)) : 0
+      score: won ? Math.max(0, 100 - (currentGame.attempts * 10)) : 0,
+      coinsEarned
     };
     
     const newHistory = [completedGame, ...gameHistory].slice(0, 50); // Keep last 50 games
@@ -108,7 +124,7 @@ const useGameStore = create((set, get) => ({
       updates.maxLevel = Math.max(maxLevel, currentGame.level);
       updates.maxScore = Math.max(maxScore, completedGame.score);
       updates.maxTime = maxTime === 0 ? finalTime : Math.min(maxTime, finalTime);
-      updates.coins = coins + (completedGame.score >= 50 ? 20 : 10);
+      updates.coins = coins + coinsEarned;
       updates.currentLevel = currentGame.level + 1;
     }
     

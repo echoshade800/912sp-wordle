@@ -112,13 +112,13 @@ export default function GameScreen() {
   };
 
   const handleRetry = async () => {
-    if (coins < 35) {
-      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
+    if (coins < 20) {
+      Alert.alert('Not Enough Coins', 'You need 20 coins to continue with progress.');
       return;
     }
 
     // Deduct coins
-    const used = await useBooster('retry', 35);
+    const used = await useBooster('retry', 20);
     if (!used) return;
 
     // Close modal
@@ -334,6 +334,11 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
 
     if (currentGuess === targetWord) {
+      // Update current game with attempts count for coin calculation
+      const { currentGame } = useGameStore.getState();
+      if (currentGame) {
+        currentGame.attempts = currentRow;
+      }
       setGameStatus('won');
       // Delay celebration to allow color change to be visible
       setTimeout(() => {
@@ -522,18 +527,18 @@ export default function GameScreen() {
           cost: 10,
           title: 'Use Dart?',
           description: 'Remove up to 3 incorrect letters from the keyboard.',
-          icon: 'search'
+          icon: 'location'
         };
       case 'hint':
         return {
           cost: 15,
           title: 'Use Hint?',
           description: 'Reveal and lock one correct letter position.',
-          icon: 'target'
+          icon: 'bulb'
         };
       case 'skip':
         return {
-          cost: 25,
+          cost: 30,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -802,13 +807,13 @@ export default function GameScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
+          style={[styles.skipButton, coins < 30 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 25 || isCelebrating || isFlipping}
+          disabled={coins < 30 || isCelebrating || isFlipping}
         >
-          <Ionicons name="play-forward" size={24} color="white" />
+          <Ionicons name="bulb" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>25</Text>
+            <Text style={styles.badgeText}>30</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -827,7 +832,7 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+20 Coins</Text>
+              <Text style={styles.rewardText}>+{currentGame?.coinsEarned || 10} Coins</Text>
             </View>
             
             <TouchableOpacity
@@ -934,8 +939,8 @@ export default function GameScreen() {
               >
                 <View style={styles.retryButtonContent}>
                   <Ionicons name="star" size={20} color="white" />
-                  <Text style={styles.retryButtonText}>35</Text>
-                  <Text style={styles.retryButtonLabel}>Retry</Text>
+                  <Text style={styles.retryButtonText}>20</Text>
+                  <Text style={styles.retryButtonLabel}>Continue</Text>
                 </View>
               </TouchableOpacity>
               
