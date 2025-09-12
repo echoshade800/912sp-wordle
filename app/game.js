@@ -331,13 +331,12 @@ export default function GameScreen() {
     // Reset flip animations for current row
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
-    // Game logic processing (guesses and keyboard already updated in submitGuess)
 
     if (currentGuess === targetWord) {
-      // Update current game with attempts count for coin calculation
+      // Update current game with attempts count for coin calculation (currentRow is 0-based)
       const { currentGame } = useGameStore.getState();
       if (currentGame) {
-        currentGame.attempts = currentRow;
+        currentGame.attempts = currentRow; // 0-based: 0=第1行, 1=第2行, etc.
       }
       setGameStatus('won');
       // Delay celebration to allow color change to be visible

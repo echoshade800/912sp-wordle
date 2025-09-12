@@ -89,17 +89,17 @@ const useGameStore = create((set, get) => ({
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) return;
     
-    // Calculate coins based on which row the player guessed correctly
+    // Calculate coins based on which row the player guessed correctly (0-based index)
     let coinsEarned = 0;
     if (won) {
-      const guessRow = currentGame.attempts; // 0-based, so row 0 = first guess
+      const guessRow = currentGame.attempts; // 0-based index: 0=第1行, 1=第2行, etc.
       switch (guessRow) {
-        case 0: coinsEarned = 50; break; // First row
-        case 1: coinsEarned = 40; break; // Second row
-        case 2: coinsEarned = 30; break; // Third row
-        case 3: coinsEarned = 20; break; // Fourth row
-        case 4: coinsEarned = 15; break; // Fifth row
-        case 5: coinsEarned = 10; break; // Sixth row
+        case 0: coinsEarned = 50; break; // 第1行猜中
+        case 1: coinsEarned = 40; break; // 第2行猜中
+        case 2: coinsEarned = 30; break; // 第3行猜中
+        case 3: coinsEarned = 20; break; // 第4行猜中
+        case 4: coinsEarned = 15; break; // 第5行猜中
+        case 5: coinsEarned = 10; break; // 第6行猜中
         default: coinsEarned = 10; break;
       }
     }
