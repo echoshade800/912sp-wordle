@@ -85,13 +85,13 @@ const useGameStore = create((set, get) => ({
   },
   
   // Complete current game
-  completeGame: async (won, finalTime) => {
+  completeGame: async (won, finalTime, isBoosterSkip = false) => {
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) return;
     
-    // Calculate coins based on which row the player guessed correctly (0-based index)
+    // Calculate coins based on which row the player guessed correctly
     let coinsEarned = 0;
-    if (won) {
+    if (won && !isBoosterSkip) {
       const guessRow = currentGame.attempts; // 0-based index: 0=第1行, 1=第2行, etc.
       switch (guessRow) {
         case 0: coinsEarned = 50; break; // 第1行猜中
@@ -102,6 +102,9 @@ const useGameStore = create((set, get) => ({
         case 5: coinsEarned = 10; break; // 第6行猜中
         default: coinsEarned = 10; break;
       }
+    } else if (isBoosterSkip) {
+      // Skip booster used - no coins earned
+      coinsEarned = 0;
     }
     
     const completedGame = {

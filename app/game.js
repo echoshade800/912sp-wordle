@@ -76,6 +76,9 @@ export default function GameScreen() {
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
 
+  // Track if skip booster was used
+  const [isBoosterSkipActive, setIsBoosterSkipActive] = useState(false);
+
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -163,7 +166,9 @@ export default function GameScreen() {
     if (gameStatus !== 'playing') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      completeGame(gameStatus === 'won', finalTime);
+      completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive);
+      // Reset skip booster flag after completing game
+      setIsBoosterSkipActive(false);
     }
   }, [gameStatus, startTime, completeGame]);
 
@@ -447,16 +452,8 @@ export default function GameScreen() {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       
-      // Check if this was a skipped game (no coin reward)
-      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
-      
-      if (isSkipped) {
-        // Skip: advance level but no coins
-        await completeGame(false, finalTime);
-      } else {
-        // Normal win: advance level and award coins
-        await completeGame(true, finalTime);
-      }
+      // Complete game normally - coins calculation handled in store
+      await completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive);
       
       // Reset celebration state
       setIsCelebrating(false);
@@ -475,6 +472,9 @@ export default function GameScreen() {
       setKeyboardStatus({});
       setHintUsed(false);
       setHintPosition(-1);
+      
+      // Reset skip booster flag
+      setIsBoosterSkipActive(false);
       
       // 设置新关卡的背景色
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
@@ -605,6 +605,9 @@ export default function GameScreen() {
         
         // Set game as won but mark as skipped (no coins)
         setGameStatus('won');
+        
+        // Mark that skip booster was used
+        setIsBoosterSkipActive(true);
         
         // Start celebration after a short delay to show the answer
         setTimeout(() => {
