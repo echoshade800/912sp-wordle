@@ -75,10 +75,6 @@ export default function GameScreen() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
-  
-  // Booster skip tracking
-  const [isBoosterSkipActive, setIsBoosterSkipActive] = useState(false);
-  const [coinsEarnedForDisplay, setCoinsEarnedForDisplay] = useState(20);
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -116,13 +112,13 @@ export default function GameScreen() {
   };
 
   const handleRetry = async () => {
-    if (coins < 20) {
-      Alert.alert('Not Enough Coins', 'You need 20 coins to continue this level.');
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
       return;
     }
 
     // Deduct coins
-    const used = await useBooster('retry', 20);
+    const used = await useBooster('retry', 35);
     if (!used) return;
 
     // Close modal
@@ -164,15 +160,10 @@ export default function GameScreen() {
   }, [currentLevel, startGame]);
 
   useEffect(() => {
-    if (gameStatus !== 'playing' && gameStatus !== 'lost') {
+    if (gameStatus !== 'playing') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      
-      if (gameStatus === 'won') {
-        completeGame(true, finalTime, currentRow, false).then((earnedCoins) => {
-          setCoinsEarnedForDisplay(earnedCoins || 0);
-        });
-      }
+      completeGame(gameStatus === 'won', finalTime);
     }
   }, [gameStatus, startTime, completeGame]);
 
@@ -449,15 +440,26 @@ export default function GameScreen() {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
+      
       // Reset celebration state
       setIsCelebrating(false);
       setShowCelebrationModal(false);
       setCelebrationStep(0);
       flipAnimations.forEach(anim => anim.setValue(0));
       greatTextScale.setValue(0.8);
-      
-      // Reset coins display for next level
-      setCoinsEarnedForDisplay(0);
       
       // Start new game
       const newWord = getRandomWord();
@@ -531,7 +533,7 @@ export default function GameScreen() {
         };
       case 'skip':
         return {
-          cost: 30,
+          cost: 25,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -597,13 +599,8 @@ export default function GameScreen() {
         // Update keyboard status to show all correct letters
         updateKeyboardStatus(targetWord, targetWord);
         
-        // Set game as won but no coins for skipping
+        // Set game as won but mark as skipped (no coins)
         setGameStatus('won');
-        
-        // Complete the game with skip flag
-        completeGame(true, finalTime, currentRow, true).then((earnedCoins) => {
-          setCoinsEarnedForDisplay(earnedCoins || 0);
-        });
         
         // Start celebration after a short delay to show the answer
         setTimeout(() => {
@@ -807,11 +804,11 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 30 || isCelebrating || isFlipping}
+          disabled={coins < 25 || isCelebrating || isFlipping}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>30</Text>
+            <Text style={styles.badgeText}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -830,7 +827,7 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+{coinsEarnedForDisplay} Coins</Text>
+              <Text style={styles.rewardText}>+20 Coins</Text>
             </View>
             
             <TouchableOpacity
@@ -937,8 +934,8 @@ export default function GameScreen() {
               >
                 <View style={styles.retryButtonContent}>
                   <Ionicons name="star" size={20} color="white" />
-                  <Text style={styles.retryButtonText}>20</Text>
-                  <Text style={styles.retryButtonLabel}>Continue</Text>
+                  <Text style={styles.retryButtonText}>35</Text>
+                  <Text style={styles.retryButtonLabel}>Retry</Text>
                 </View>
               </TouchableOpacity>
               
@@ -1339,6 +1336,101 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
+  },
+  gameOverModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  gameOverModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  gameOverTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  gameOverSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  gameOverAnswer: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  gameOverButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  retryButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  retryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  retryButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  noThanksButton: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  noThanksButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
   },
   gameOverModalOverlay: {
     flex: 1,
