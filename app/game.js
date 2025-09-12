@@ -630,24 +630,6 @@ export default function GameScreen() {
     });
   };
 
-  const showGameOverDialog = () => {
-    setShowGameOverModal(true);
-    
-    // Show modal animation
-    Animated.parallel([
-      Animated.timing(gameOverOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(gameOverScale, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
   const closeGameOverModal = () => {
     Animated.parallel([
       Animated.timing(gameOverOpacity, {
