@@ -920,7 +920,7 @@ export default function GameScreen() {
             <Text style={styles.gameOverTitle}>ROUND OVER</Text>
             
             <View style={styles.flameIcon}>
-              <Ionicons name="flame" size={64} color="#ff6b35" />
+              <Ionicons name="flame" size={72} color="#ff6b35" />
             </View>
             
             <Text style={styles.gameOverSubtitle}>
@@ -1372,8 +1372,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 32,
+    marginTop: 12,
+    marginBottom: 12,
   },
   gameOverAnswer: {
     fontSize: 18,
@@ -1467,8 +1467,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 32,
+    marginTop: 12,
+    marginBottom: 12,
   },
   gameOverAnswer: {
     fontSize: 18,
