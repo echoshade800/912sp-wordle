@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const GRID_SIZE = Math.min(width - 40, 350);
 const TILE_SIZE = (GRID_SIZE - 20) / 5;
 
