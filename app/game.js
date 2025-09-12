@@ -1017,8 +1017,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   key: {
-    minWidth: 32,
-    height: 48,
+    minWidth: 36,
+    height: 52,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1034,8 +1034,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   backKey: {
-    minWidth: 48,
-    height: 48,
+    minWidth: 52,
+    height: 52,
     borderRadius: 8,
     backgroundColor: '#ffffff',
     justifyContent: 'center',
