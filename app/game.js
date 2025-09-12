@@ -71,10 +71,10 @@ export default function GameScreen() {
     // Show default color for future rows
     if (rowIndex > currentRow) return '#d3d6da';
     
-    // Show default color for current row during input
+    // Show default color for current row during input (not submitted yet)
     if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) {
-      // If not submitted yet, show default color
-      if (!guesses[rowIndex]) return '#d3d6da';
+      // If not submitted yet OR still flipping, show default color
+      if (!guesses[rowIndex] || isFlipping) return '#d3d6da';
     }
     
     if (!letter) return '#d3d6da';
@@ -157,11 +157,10 @@ export default function GameScreen() {
     // Start flip animation
     setIsFlipping(true);
     
-    // Update the guess immediately so colors can be calculated
+    // Update the guess in state but don't show colors yet
     const newGuesses = [...guesses];
     newGuesses[currentRow] = currentGuess;
     setGuesses(newGuesses);
-    updateKeyboardStatus(currentGuess, targetWord);
     
     // Create flip animation for current row
     const flipSequence = flipRowAnimations[currentRow].map((anim, index) => 
@@ -173,10 +172,19 @@ export default function GameScreen() {
       })
     );
     
-    // Start flip animation with stagger
-    Animated.stagger(80, flipSequence).start(() => {
-      // After flip animation completes, process the guess
-      processGuess();
+    // Start each flip animation individually to control color timing
+    flipSequence.forEach((animation, index) => {
+      animation.start(() => {
+        // When this specific tile completes its flip, we can show its color
+        // This happens automatically through getTileColor since the guess is already set
+        
+        // If this is the last tile, process the game logic
+        if (index === flipSequence.length - 1) {
+          // Update keyboard status after all flips complete
+          updateKeyboardStatus(currentGuess, targetWord);
+          processGuess();
+        }
+      });
     });
   };
 
