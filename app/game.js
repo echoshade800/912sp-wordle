@@ -76,9 +76,6 @@ export default function GameScreen() {
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
 
-  // Track if skip booster was used
-  const [isBoosterSkipActive, setIsBoosterSkipActive] = useState(false);
-
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -115,13 +112,13 @@ export default function GameScreen() {
   };
 
   const handleRetry = async () => {
-    if (coins < 20) {
-      Alert.alert('Not Enough Coins', 'You need 20 coins to continue with progress.');
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
       return;
     }
 
     // Deduct coins
-    const used = await useBooster('retry', 20);
+    const used = await useBooster('retry', 35);
     if (!used) return;
 
     // Close modal
@@ -166,9 +163,7 @@ export default function GameScreen() {
     if (gameStatus !== 'playing') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive);
-      // Reset skip booster flag after completing game
-      setIsBoosterSkipActive(false);
+      completeGame(gameStatus === 'won', finalTime);
     }
   }, [gameStatus, startTime, completeGame]);
 
@@ -336,13 +331,9 @@ export default function GameScreen() {
     // Reset flip animations for current row
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
+    // Game logic processing (guesses and keyboard already updated in submitGuess)
 
     if (currentGuess === targetWord) {
-      // Update current game with attempts count for coin calculation (currentRow is 0-based)
-      const { currentGame } = useGameStore.getState();
-      if (currentGame) {
-        currentGame.attempts = currentRow; // 0-based: 0=第1行, 1=第2行, etc.
-      }
       setGameStatus('won');
       // Delay celebration to allow color change to be visible
       setTimeout(() => {
@@ -452,8 +443,16 @@ export default function GameScreen() {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       
-      // Complete game normally - coins calculation handled in store
-      await completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive);
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
       
       // Reset celebration state
       setIsCelebrating(false);
@@ -472,9 +471,6 @@ export default function GameScreen() {
       setKeyboardStatus({});
       setHintUsed(false);
       setHintPosition(-1);
-      
-      // Reset skip booster flag
-      setIsBoosterSkipActive(false);
       
       // 设置新关卡的背景色
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
@@ -526,18 +522,18 @@ export default function GameScreen() {
           cost: 10,
           title: 'Use Dart?',
           description: 'Remove up to 3 incorrect letters from the keyboard.',
-          icon: 'location'
+          icon: 'search'
         };
       case 'hint':
         return {
           cost: 15,
           title: 'Use Hint?',
           description: 'Reveal and lock one correct letter position.',
-          icon: 'bulb'
+          icon: 'target'
         };
       case 'skip':
         return {
-          cost: 30,
+          cost: 25,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -605,9 +601,6 @@ export default function GameScreen() {
         
         // Set game as won but mark as skipped (no coins)
         setGameStatus('won');
-        
-        // Mark that skip booster was used
-        setIsBoosterSkipActive(true);
         
         // Start celebration after a short delay to show the answer
         setTimeout(() => {
@@ -809,13 +802,13 @@ export default function GameScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.skipButton, coins < 30 && styles.disabledBooster]}
+          style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 30 || isCelebrating || isFlipping}
+          disabled={coins < 25 || isCelebrating || isFlipping}
         >
-          <Ionicons name="bulb" size={24} color="white" />
+          <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>30</Text>
+            <Text style={styles.badgeText}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -834,7 +827,7 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+{currentGame?.coinsEarned || 10} Coins</Text>
+              <Text style={styles.rewardText}>+20 Coins</Text>
             </View>
             
             <TouchableOpacity
@@ -941,8 +934,8 @@ export default function GameScreen() {
               >
                 <View style={styles.retryButtonContent}>
                   <Ionicons name="star" size={20} color="white" />
-                  <Text style={styles.retryButtonText}>20</Text>
-                  <Text style={styles.retryButtonLabel}>Continue</Text>
+                  <Text style={styles.retryButtonText}>35</Text>
+                  <Text style={styles.retryButtonLabel}>Retry</Text>
                 </View>
               </TouchableOpacity>
               
