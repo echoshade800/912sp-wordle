@@ -773,9 +773,10 @@ export default function GameScreen() {
             onPress={() => handleBooster('dart')}
             disabled={coins < 10 || isCelebrating || isFlipping}
           >
-            <Ionicons name="search" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>10</Text>
+            <Ionicons name="search" size={20} color="white" />
+            <View style={styles.boosterPriceContainer}>
+              <Ionicons name="star" size={10} color="#FFD700" />
+              <Text style={styles.boosterPriceText}>10</Text>
             </View>
           </TouchableOpacity>
 
@@ -784,9 +785,10 @@ export default function GameScreen() {
             onPress={() => handleBooster('hint')}
             disabled={coins < 15 || isCelebrating || isFlipping}
           >
-            <Ionicons name="target" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>15</Text>
+            <Ionicons name="target" size={20} color="white" />
+            <View style={styles.boosterPriceContainer}>
+              <Ionicons name="star" size={10} color="#FFD700" />
+              <Text style={styles.boosterPriceText}>15</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -806,9 +808,10 @@ export default function GameScreen() {
           onPress={() => handleBooster('skip')}
           disabled={coins < 25 || isCelebrating || isFlipping}
         >
-          <Ionicons name="play-forward" size={24} color="white" />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>25</Text>
+          <Ionicons name="play-forward" size={20} color="white" />
+          <View style={styles.boosterPriceContainer}>
+            <Ionicons name="star" size={10} color="#FFD700" />
+            <Text style={styles.boosterPriceText}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -1100,6 +1103,22 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  boosterPriceContainer: {
+    position: 'absolute',
+    bottom: -8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    gap: 2,
+  },
+  boosterPriceText: {
+    fontSize: 10,
     fontWeight: 'bold',
     color: 'white',
   },
