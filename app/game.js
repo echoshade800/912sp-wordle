@@ -225,33 +225,11 @@ export default function GameScreen() {
           <Ionicons name="chevron-back" size={32} color="#4b5563" />
         </TouchableOpacity>
         
-        <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>AI</Text>
-          </View>
-        </View>
+        <Text style={styles.levelText}>Level {currentLevel}</Text>
 
-        <View style={styles.headerCenter}>
-          <View style={styles.timerContainer}>
-            <Ionicons name="time-outline" size={20} color="#6b7280" />
-          </View>
-          <Text style={styles.scoreLabel}>SCORE</Text>
-          <Text style={styles.scoreValue}>1</Text>
-          <TouchableOpacity style={styles.infoButton}>
-            <Ionicons name="information-circle-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.headerRight}>
-          <View style={styles.coinsContainer}>
-            <Ionicons name="people" size={16} color="#ffffff" />
-            <View style={styles.coinBadge}>
-              <Text style={styles.coinText}>W</Text>
-            </View>
-            <View style={styles.plusBadge}>
-              <Ionicons name="add" size={12} color="#ffffff" />
-            </View>
-          </View>
+        <View style={styles.coinsInfo}>
+          <Ionicons name="star" size={20} color="#FFD700" />
+          <Text style={styles.coinsText}>{coins}</Text>
         </View>
       </View>
 
@@ -381,91 +359,20 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
-  logoContainer: {
-    position: 'absolute',
-    left: 60,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#dc2626',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  logoText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  headerCenter: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  timerContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(107, 114, 128, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scoreLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '600',
-  },
-  scoreValue: {
+  levelText: {
     fontSize: 24,
-    color: '#374151',
+    color: '#333',
     fontWeight: 'bold',
   },
-  infoButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#60a5fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerRight: {
-    position: 'absolute',
-    right: 20,
-  },
-  coinsContainer: {
+  coinsInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#6b7280',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
+    gap: 4,
   },
-  coinBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#f59e0b',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  coinText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  plusBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#10b981',
-    justifyContent: 'center',
-    alignItems: 'center',
+  coinsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
   gameBoard: {
     alignItems: 'center',
