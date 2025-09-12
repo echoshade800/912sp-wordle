@@ -169,14 +169,11 @@ export default function GameScreen() {
       const finalTime = endTime - startTime;
       
       if (gameStatus === 'won') {
-        completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive).then((earnedCoins) => {
+        completeGame(gameStatus === 'won', finalTime).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
-          setIsBoosterSkipActive(false); // Reset after use
         });
       }
     }
-  }
-  )
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
@@ -476,7 +473,6 @@ export default function GameScreen() {
       // Reset booster states for new level
       setLockedPositions(new Set());
       setDisabledKeys(new Set());
-      setIsBoosterSkipActive(false);
       
     } catch (error) {
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
@@ -585,9 +581,6 @@ export default function GameScreen() {
         break;
         
       case 'skip':
-        // Mark as booster skip and complete the game
-        setIsBoosterSkipActive(true);
-        
         // Complete current game as skipped
         const endTime = Date.now();
         const finalTime = endTime - startTime;
@@ -600,8 +593,9 @@ export default function GameScreen() {
         // Update keyboard status to show all correct letters
         updateKeyboardStatus(targetWord, targetWord);
         
-        // Set game as won but mark as skipped (no coins)
+        // Set game as won but no coins for skipping
         setGameStatus('won');
+        setCoinsEarnedForDisplay(0); // No coins for skipping
         
         // Start celebration after a short delay to show the answer
         setTimeout(() => {
