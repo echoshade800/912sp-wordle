@@ -11,6 +11,19 @@ import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
 
+const BACKGROUND_COLORS = [
+  '#D8E2DC', // 第1关：浅灰绿色
+  '#FFE5D9', // 第2关：柔和杏桃粉
+  '#FFCAD4', // 第3关：浅樱花粉
+  '#F4ACB7', // 第4关：暖玫瑰粉
+  '#9D8189', // 第5关：灰紫玫瑰
+  '#B5EAD7', // 第6关：浅薄荷绿
+  '#C7CEEA', // 第7关：柔和薰衣草紫
+  '#E2F0CB', // 第8关：浅嫩芽绿
+  '#FFDAC1', // 第9关：奶油杏色
+  '#E0BBE4', // 第10关：淡紫丁香
+];
+
 const { width, height } = Dimensions.get('window');
 const GRID_SIZE = Math.min(width - 40, 350);
 const TILE_SIZE = (GRID_SIZE - 20) / 5;
@@ -50,12 +63,16 @@ export default function GameScreen() {
     Array.from({ length: 5 }, () => new Animated.Value(0))
   ));
   const [flippedTiles, setFlippedTiles] = useState(new Set());
+  const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
 
   useEffect(() => {
     if (!gameStarted.current) {
       const word = getRandomWord();
       setTargetWord(word);
       startGame(currentLevel);
+      // 设置当前关卡的背景色
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
       gameStarted.current = true;
     }
   }, [currentLevel, startGame]);
@@ -349,6 +366,10 @@ export default function GameScreen() {
       setHintUsed(false);
       setHintPosition(-1);
       
+      // 设置新关卡的背景色
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
+      
     } catch (error) {
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
     } finally {
@@ -438,7 +459,7 @@ export default function GameScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentBackgroundColor }]}>
       {/* Celebration Overlay */}
       {isCelebrating && (
         <View style={styles.celebrationOverlay}>
@@ -634,7 +655,6 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
   },
   header: {
     flexDirection: 'row',
