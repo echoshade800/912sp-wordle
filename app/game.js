@@ -169,7 +169,7 @@ export default function GameScreen() {
       const finalTime = endTime - startTime;
       
       if (gameStatus === 'won') {
-        completeGame(true, finalTime).then((earnedCoins) => {
+        completeGame(true, finalTime, currentRow, false).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
       }
@@ -601,7 +601,7 @@ export default function GameScreen() {
         setGameStatus('won');
         
         // Complete the game with skip flag
-        completeGame(true, finalTime, true).then((earnedCoins) => {
+        completeGame(true, finalTime, currentRow, true).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
         
