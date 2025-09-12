@@ -1087,21 +1087,26 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#ef4444',
-    justifyContent: 'center',
+  boosterContainer: {
     alignItems: 'center',
   },
-  badgeText: {
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  starIcon: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginRight: 2,
+  },
+  priceText: {
     fontSize: 12,
     fontWeight: 'bold',
     color: 'white',
+  },
+  disabledPriceText: {
+    color: '#AAAAAA',
   },
   submitButton: {
     paddingHorizontal: 32,
