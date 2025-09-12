@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
   },
   keyboard: {
     paddingHorizontal: 4,
-    marginTop: 6,
+    marginTop: -2,
   },
   keyboardRow: {
     flexDirection: 'row',
