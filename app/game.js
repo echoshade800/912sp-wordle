@@ -1372,7 +1372,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 20,
+    marginBottom: 32,
   },
   gameOverAnswer: {
     fontSize: 18,
@@ -1466,7 +1467,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 20,
+    marginBottom: 32,
   },
   gameOverAnswer: {
     fontSize: 18,
@@ -1522,5 +1524,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#374151',
+  },
+  flameIcon: {
+    marginBottom: 16,
   },
 });
