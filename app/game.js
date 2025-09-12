@@ -808,7 +808,8 @@ export default function GameScreen() {
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>25</Text>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={[styles.priceText, coins < 25 && styles.disabledPriceText]}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -838,7 +839,9 @@ export default function GameScreen() {
               <Text style={styles.nextButtonText}>
                 {isSubmitting ? 'LOADING...' : 'NEXT'}
               </Text>
-            </TouchableOpacity>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={[styles.priceText, coins < 15 && styles.disabledPriceText]}>15</Text>
           </View>
         </View>
       </Modal>
