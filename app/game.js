@@ -174,7 +174,7 @@ export default function GameScreen() {
         });
       }
     }
-  }
+  }, [gameStatus, startTime, completeGame]);
   )
 
   const getTileColor = (letter, position, rowIndex) => {
