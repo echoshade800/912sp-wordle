@@ -409,43 +409,134 @@ export default function GameScreen() {
   const handleBooster = async (type) => {
     if (isCelebrating || isFlipping) return;
     
-    let cost = 0;
-    let title = '';
-    let description = '';
+    const boosterInfo = getBoosterInfo(type);
     
-    switch (type) {
-      case 'dart':
-        cost = 10;
-        title = 'Dart Booster';
-        description = 'Remove up to 3 incorrect letters from the keyboard to help narrow down your guesses.';
-        break;
-      case 'hint':
-        cost = 15;
-        title = 'Hint Booster';
-        description = 'Reveal and lock one correct letter in the current row to guide your guess.';
-        break;
-      case 'skip':
-        cost = 25;
-        title = 'Skip Booster';
-        description = 'Skip the current level and advance to the next one without completing it.';
-        break;
-    }
-
-    if (coins < cost) {
-      Alert.alert('Not Enough Coins', `You need ${cost} coins to use this booster.`);
+    if (coins < boosterInfo.cost) {
+      Alert.alert('Not Enough Coins', `You need ${boosterInfo.cost} coins to use this booster.`);
       return;
     }
 
-    Alert.alert(
-      title,
-      `${description}\n\nCost: ${cost} coins\nYour coins: ${coins}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Use Booster', 
-          onPress: async () => {
-            const used = await useBooster(type, cost);
-            if (!used) return;
+    setSelectedBooster(type);
+    setShowBoosterModal(true);
+    
+    // Show modal animation
+    Animated.parallel([
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalScale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const getBoosterInfo = (type) => {
+    switch (type) {
+      case 'dart':
+        return {
+          cost: 10,
+          title: 'Use Dart?',
+          description: 'Remove up to 3 incorrect letters from the keyboard.',
+          icon: 'search'
+        };
+      case 'hint':
+        return {
+          cost: 15,
+          title: 'Use Hint?',
+          description: 'Reveal and lock one correct letter position.',
+          icon: 'target'
+        };
+      case 'skip':
+        return {
+          cost: 25,
+          title: 'Skip Level?',
+          description: 'Skip current level and advance to the next one.',
+          icon: 'play-forward'
+        };
+      default:
+        return { cost: 0, title: '', description: '', icon: '' };
+    }
+  };
+
+  const handleConfirmBooster = async () => {
+    if (!selectedBooster) return;
+    
+    const boosterInfo = getBoosterInfo(selectedBooster);
+    const used = await useBooster(selectedBooster, boosterInfo.cost);
+    if (!used) return;
+
+    switch (selectedBooster) {
+      case 'dart':
+        // Find letters that are definitely not in the target word
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const incorrectLetters = alphabet.filter(letter => 
+          !targetWord.includes(letter) && !disabledKeys.has(letter)
+        ).slice(0, 3);
+        
+        if (incorrectLetters.length > 0) {
+          setDisabledKeys(prev => new Set([...prev, ...incorrectLetters]));
+        }
+        break;
+        
+      case 'hint':
+        // Find available positions that aren't locked yet
+        const availablePositions = [];
+        for (let i = 0; i < 5; i++) {
+          if (!lockedPositions.has(i)) {
+            availablePositions.push(i);
+          }
+        }
+        
+        if (availablePositions.length > 0) {
+          const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+          setLockedPositions(prev => new Set([...prev, randomPos]));
+          
+          // Update current guess with the hint
+          setCurrentGuess(prev => {
+            const newGuess = prev.split('');
+            while (newGuess.length < 5) newGuess.push('');
+            newGuess[randomPos] = targetWord[randomPos];
+            return newGuess.join('');
+          });
+        }
+        break;
+        
+      case 'skip':
+        // Complete current game as skipped
+        const endTime = Date.now();
+        const finalTime = endTime - startTime;
+        
+        await completeGame(false, finalTime);
+        
+        // Start new level
+        handleNextLevel();
+        break;
+    }
+    
+    closeBoosterModal();
+  };
+
+  const closeBoosterModal = () => {
+    Animated.parallel([
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalScale, {
+        toValue: 0.95,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowBoosterModal(false);
+      setSelectedBooster(null);
+    });
+  };
 
             switch (type) {
               case 'dart':
@@ -738,6 +829,64 @@ export default function GameScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* Booster Confirmation Modal */}
+      <Modal
+        visible={showBoosterModal}
+        transparent={true}
+        animationType="none"
+      >
+        <View style={styles.boosterModalOverlay}>
+          <Animated.View 
+            style={[
+              styles.boosterModal,
+              {
+                opacity: modalOpacity,
+                transform: [{ scale: modalScale }]
+              }
+            ]}
+          >
+            {selectedBooster && (
+              <>
+                <View style={styles.boosterModalHeader}>
+                  <Ionicons 
+                    name={getBoosterInfo(selectedBooster).icon} 
+                    size={40} 
+                    color="#6366f1" 
+                  />
+                  <Text style={styles.boosterModalTitle}>
+                    {getBoosterInfo(selectedBooster).title}
+                  </Text>
+                </View>
+                
+                <Text style={styles.boosterModalDescription}>
+                  {getBoosterInfo(selectedBooster).description}
+                </Text>
+                
+                <Text style={styles.boosterModalCost}>
+                  This will cost {getBoosterInfo(selectedBooster).cost} coins.
+                </Text>
+                
+                <View style={styles.boosterModalButtons}>
+                  <TouchableOpacity
+                    style={styles.boosterCancelButton}
+                    onPress={closeBoosterModal}
+                  >
+                    <Text style={styles.boosterCancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.boosterConfirmButton}
+                    onPress={handleConfirmBooster}
+                  >
+                    <Text style={styles.boosterConfirmButtonText}>Use</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </Animated.View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -1037,5 +1186,93 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  boosterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  boosterModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  boosterModalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  boosterModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  boosterModalDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  boosterModalCost: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  boosterModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  boosterCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  boosterCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  boosterConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  boosterConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
