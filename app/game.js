@@ -512,14 +512,22 @@ export default function GameScreen() {
         break;
         
       case 'skip':
-        // Complete current game as skipped
-        const endTime = Date.now();
-        const finalTime = endTime - startTime;
+        // Fill current row with the correct answer
+        const newGuesses = [...guesses];
+        newGuesses[currentRow] = targetWord;
+        setGuesses(newGuesses);
+        setCurrentGuess(targetWord);
         
-        await completeGame(false, finalTime);
+        // Update keyboard status to show all letters
+        updateKeyboardStatus(targetWord, targetWord);
         
-        // Start new level
-        handleNextLevel();
+        // Set game as won and trigger celebration
+        setTimeout(() => {
+          setGameStatus('won');
+          setTimeout(() => {
+            startCelebration();
+          }, 300);
+        }, 500);
         break;
     }
     
