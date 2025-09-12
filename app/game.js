@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingBottom: 20,
     marginTop: 16,
-    transform: [{ translateY: -20 }],
+    transform: [{ translateY: -10 }],
   },
   boostersRow: {
     flexDirection: 'row',
