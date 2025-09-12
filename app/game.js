@@ -71,6 +71,11 @@ export default function GameScreen() {
   const [modalOpacity] = useState(new Animated.Value(0));
   const [modalScale] = useState(new Animated.Value(0.95));
 
+  // Game over modal states
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [gameOverOpacity] = useState(new Animated.Value(0));
+  const [gameOverScale] = useState(new Animated.Value(0.95));
+
   // Booster states
   const [lockedPositions, setLockedPositions] = useState(new Set());
   const [disabledKeys, setDisabledKeys] = useState(new Set());
@@ -270,14 +275,7 @@ export default function GameScreen() {
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-        Alert.alert(
-          'Try Again!',
-          `The word was "${targetWord}". Don't give up!`,
-          [
-            { text: 'Try Again', onPress: () => router.replace('/game') },
-            { text: 'Home', onPress: () => router.replace('/') }
-          ]
-        );
+        showGameOverDialog();
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
