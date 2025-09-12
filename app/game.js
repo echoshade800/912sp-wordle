@@ -11,6 +11,66 @@ import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
 
+const GameRulesModal = ({ visible, onClose }) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+    >
+      <View style={styles.rulesModalOverlay}>
+        <View style={styles.rulesModal}>
+          <View style={styles.rulesHeader}>
+            <Text style={styles.rulesTitle}>Game Rules</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.rulesContent}>
+            <Text style={styles.rulesText}>
+              Guess the hidden 5-letter word in 6 attempts or fewer.
+            </Text>
+            
+            <View style={styles.rulesExamples}>
+              <View style={styles.ruleExample}>
+                <View style={[styles.exampleTile, { backgroundColor: '#6aaa64' }]}>
+                  <Text style={styles.exampleTileText}>W</Text>
+                </View>
+                <Text style={styles.ruleText}>
+                  <Text style={styles.boldText}>Green:</Text> Correct letter in correct position
+                </Text>
+              </View>
+              
+              <View style={styles.ruleExample}>
+                <View style={[styles.exampleTile, { backgroundColor: '#c9b458' }]}>
+                  <Text style={styles.exampleTileText}>O</Text>
+                </View>
+                <Text style={styles.ruleText}>
+                  <Text style={styles.boldText}>Yellow:</Text> Correct letter in wrong position
+                </Text>
+              </View>
+              
+              <View style={styles.ruleExample}>
+                <View style={[styles.exampleTile, { backgroundColor: '#787c7e' }]}>
+                  <Text style={styles.exampleTileText}>R</Text>
+                </View>
+                <Text style={styles.ruleText}>
+                  <Text style={styles.boldText}>Gray:</Text> Letter not in the word
+                </Text>
+              </View>
+            </View>
+            
+            <Text style={styles.rulesFooter}>
+              Each guess must be a valid English word. Good luck!
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const BACKGROUND_COLORS = [
   '#D8E2DC', // 第1关：浅灰绿色
   '#FFE5D9', // 第2关：柔和杏桃粉
@@ -75,6 +135,9 @@ export default function GameScreen() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
+  
+  // Rules modal state
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -141,6 +204,10 @@ export default function GameScreen() {
   const handleNoThanks = () => {
     closeGameOverModal();
     router.back();
+  };
+
+  const handleInfoPress = () => {
+    setShowRulesModal(true);
   };
 
   // Booster states
@@ -693,7 +760,12 @@ export default function GameScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.levelText}>Level {currentLevel}</Text>
+        <View style={styles.levelContainer}>
+          <Text style={styles.levelText}>Level {currentLevel}</Text>
+          <TouchableOpacity onPress={handleInfoPress} style={styles.infoButton}>
+            <Ionicons name="information-circle-outline" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
         <View style={styles.coinsInfo}>
           <Ionicons name="star" size={20} color="#FFD700" />
           <Text style={styles.coinsText}>{coins}</Text>
@@ -952,6 +1024,12 @@ export default function GameScreen() {
           </Animated.View>
         </View>
       </Modal>
+      
+      {/* Game Rules Modal */}
+      <GameRulesModal 
+        visible={showRulesModal} 
+        onClose={() => setShowRulesModal(false)} 
+      />
     </SafeAreaView>
   );
 }
@@ -967,10 +1045,18 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 10,
   },
+  levelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   levelText: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+  },
+  infoButton: {
+    padding: 4,
   },
   coinsInfo: {
     flexDirection: 'row',
@@ -1548,5 +1634,89 @@ const styles = StyleSheet.create({
   },
   flameIcon: {
     marginBottom: 16,
+  },
+  rulesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  rulesModal: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  rulesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  rulesTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  rulesContent: {
+    padding: 20,
+  },
+  rulesText: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rulesExamples: {
+    marginBottom: 20,
+  },
+  ruleExample: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  exampleTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  exampleTileText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  ruleText: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+    lineHeight: 20,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  rulesFooter: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
