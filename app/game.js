@@ -76,6 +76,73 @@ export default function GameScreen() {
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
 
+  const showGameOverDialog = () => {
+    setShowGameOverModal(true);
+    
+    // Show modal animation
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeGameOverModal = () => {
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 0.95,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowGameOverModal(false);
+    });
+  };
+
+  const handleRetry = async () => {
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
+      return;
+    }
+
+    // Deduct coins
+    const used = await useBooster('retry', 35);
+    if (!used) return;
+
+    // Close modal
+    closeGameOverModal();
+
+    // Reset game state but keep keyboard colors
+    setGuesses(Array(6).fill(''));
+    setCurrentGuess('');
+    setCurrentRow(0);
+    setGameStatus('playing');
+    setIsFlipping(false);
+    setFlippedTiles(new Set());
+    
+    // Reset flip animations
+    flipRowAnimations.forEach(rowAnims => 
+      rowAnims.forEach(anim => anim.setValue(0))
+    );
+  };
+
+  const handleNoThanks = () => {
+    closeGameOverModal();
+    router.back();
+  };
+
   // Booster states
   const [lockedPositions, setLockedPositions] = useState(new Set());
   const [disabledKeys, setDisabledKeys] = useState(new Set());
@@ -900,6 +967,49 @@ export default function GameScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Game Over Modal */}
+      <Modal
+        visible={showGameOverModal}
+        transparent={true}
+        animationType="none"
+      >
+        <View style={styles.gameOverModalOverlay}>
+          <Animated.View 
+            style={[
+              styles.gameOverModal,
+              {
+                opacity: gameOverOpacity,
+                transform: [{ scale: gameOverScale }]
+              }
+            ]}
+          >
+            <Text style={styles.gameOverTitle}>ROUND OVER</Text>
+            <Text style={styles.gameOverSubtitle}>You've run out of attempts!</Text>
+            <Text style={styles.gameOverAnswer}>The word was: {targetWord}</Text>
+            
+            <View style={styles.gameOverButtons}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleRetry}
+              >
+                <View style={styles.retryButtonContent}>
+                  <Ionicons name="star" size={20} color="white" />
+                  <Text style={styles.retryButtonText}>35</Text>
+                  <Text style={styles.retryButtonLabel}>Retry</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.noThanksButton}
+                onPress={handleNoThanks}
+              >
+                <Text style={styles.noThanksButtonText}>No Thanks</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1285,6 +1395,100 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
+  },
+  gameOverModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  gameOverModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  gameOverTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  gameOverSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  gameOverAnswer: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  gameOverButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  retryButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  retryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  retryButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  noThanksButton: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  noThanksButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
   },
   gameOverModalOverlay: {
     flex: 1,
