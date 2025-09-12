@@ -68,8 +68,16 @@ export default function GameScreen() {
   }, [gameStatus, startTime, completeGame]);
 
   const getTileColor = (letter, position, rowIndex) => {
+    // Show default color for future rows
     if (rowIndex > currentRow) return '#d3d6da';
-    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating && !isFlipping) return '#d3d6da';
+    
+    // Show default color for current row during input (not flipping)
+    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) {
+      // During flip animation, don't show colors yet
+      if (isFlipping) return '#d3d6da';
+      // If not submitted yet, show default color
+      if (!guesses[rowIndex]) return '#d3d6da';
+    }
     
     if (!letter) return '#d3d6da';
     
