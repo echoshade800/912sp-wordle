@@ -283,13 +283,13 @@ export default function GameScreen() {
                   key={key}
                   style={keyStyle}
                   onPress={() => handleKeyPress(key)}
-                  disabled={!isSubmitEnabled() && key === 'ENTER'}
+                  disabled={gameStatus !== 'playing'}
                 >
                   {key === 'BACK' ? (
                     <Ionicons name="backspace" size={20} color="#333" />
                   ) : (
                     <Text style={textStyle}>
-                      {key === 'ENTER' ? getSubmitButtonText() : key}
+                      {key}
                     </Text>
                   )}
                 </TouchableOpacity>
