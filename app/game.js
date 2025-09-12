@@ -49,6 +49,7 @@ export default function GameScreen() {
   const [flipRowAnimations] = useState(Array.from({ length: 6 }, () => 
     Array.from({ length: 5 }, () => new Animated.Value(0))
   ));
+  const [flippedTiles, setFlippedTiles] = useState(new Set());
 
   useEffect(() => {
     if (!gameStarted.current) {
@@ -71,10 +72,18 @@ export default function GameScreen() {
     // Show default color for future rows
     if (rowIndex > currentRow) return '#d3d6da';
     
+    // Show default color for current row during flipping
+    if (rowIndex === currentRow && isFlipping) {
+      // Only show color if this specific tile has completed its flip
+      const tileKey = `${rowIndex}-${position}`;
+      if (!flippedTiles.has(tileKey)) {
+        return '#d3d6da';
+      }
+    }
+    
     // Show default color for current row during input (not submitted yet)
-    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) {
-      // If not submitted yet OR still flipping, show default color
-      if (!guesses[rowIndex] || isFlipping) return '#d3d6da';
+    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating && !guesses[rowIndex]) {
+      return '#d3d6da';
     }
     
     if (!letter) return '#d3d6da';
@@ -156,6 +165,7 @@ export default function GameScreen() {
 
     // Start flip animation
     setIsFlipping(true);
+    setFlippedTiles(new Set()); // Reset flipped tiles
     
     // Update the guess in state but don't show colors yet
     const newGuesses = [...guesses];
@@ -174,13 +184,19 @@ export default function GameScreen() {
     
     // Start each flip animation individually to control color timing
     flipSequence.forEach((animation, index) => {
-      animation.start(() => {
-        // When this specific tile completes its flip, we can show its color
-        // This happens automatically through getTileColor since the guess is already set
+      animation.start(({ finished }) => {
+        if (finished) {
+          // Mark this tile as flipped so it can show its color
+          const tileKey = `${currentRow}-${index}`;
+          setFlippedTiles(prev => new Set([...prev, tileKey]));
+          
+          // Force re-render to show the color
+          setGuesses(prevGuesses => [...prevGuesses]);
+        }
         
         // If this is the last tile, process the game logic
         if (index === flipSequence.length - 1) {
-          // Update keyboard status after all flips complete
+          // Update keyboard status and process game logic after all flips complete
           updateKeyboardStatus(currentGuess, targetWord);
           processGuess();
         }
@@ -190,6 +206,7 @@ export default function GameScreen() {
 
   const processGuess = () => {
     setIsFlipping(false);
+    setFlippedTiles(new Set()); // Clear flipped tiles state
     
     // Reset flip animations for current row
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
