@@ -21,6 +21,19 @@ const KEYBOARD_LAYOUT = [
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
 ];
 
+const BACKGROUND_COLORS = [
+  '#D8E2DC', // 浅灰绿色
+  '#FFE5D9', // 柔和杏桃粉
+  '#FFCAD4', // 浅樱花粉
+  '#F4ACB7', // 暖玫瑰粉
+  '#9D8189', // 灰紫玫瑰
+  '#B5EAD7', // 浅薄荷绿
+  '#C7CEEA', // 柔和薰衣草紫
+  '#E2F0CB', // 浅嫩芽绿
+  '#FFDAC1', // 奶油杏色
+  '#E0BBE4'  // 淡紫丁香
+];
+
 export default function GameScreen() {
   const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
   const [targetWord, setTargetWord] = useState('');
@@ -50,6 +63,7 @@ export default function GameScreen() {
     Array.from({ length: 5 }, () => new Animated.Value(0))
   ));
   const [flippedTiles, setFlippedTiles] = useState(new Set());
+  const [currentBackgroundColor, setCurrentBackgroundColor] = useState(BACKGROUND_COLORS[0]);
 
   useEffect(() => {
     if (!gameStarted.current) {
@@ -57,6 +71,10 @@ export default function GameScreen() {
       setTargetWord(word);
       startGame(currentLevel);
       gameStarted.current = true;
+      
+      // Set background color based on current level
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
     }
   }, [currentLevel, startGame]);
 
@@ -349,6 +367,11 @@ export default function GameScreen() {
       setHintUsed(false);
       setHintPosition(-1);
       
+      // Update background color for new level
+      const newLevel = currentLevel + 1;
+      const colorIndex = (newLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
+      
     } catch (error) {
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
     } finally {
@@ -634,7 +657,6 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
   },
   header: {
     flexDirection: 'row',
