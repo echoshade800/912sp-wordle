@@ -377,7 +377,17 @@ export default function GameScreen() {
       
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      await completeGame(true, finalTime);
+      
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
       
       // Reset celebration state
       setIsCelebrating(false);
@@ -516,10 +526,21 @@ export default function GameScreen() {
         const endTime = Date.now();
         const finalTime = endTime - startTime;
         
-        await completeGame(false, finalTime);
+        // Fill in the correct answer
+        const newGuesses = [...guesses];
+        newGuesses[currentRow] = targetWord;
+        setGuesses(newGuesses);
         
-        // Start new level
-        handleNextLevel();
+        // Update keyboard status to show all correct letters
+        updateKeyboardStatus(targetWord, targetWord);
+        
+        // Set game as won but mark as skipped (no coins)
+        setGameStatus('won');
+        
+        // Start celebration after a short delay to show the answer
+        setTimeout(() => {
+          startCelebration();
+        }, 500);
         break;
     }
     
