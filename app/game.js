@@ -71,10 +71,8 @@ export default function GameScreen() {
     // Show default color for future rows
     if (rowIndex > currentRow) return '#d3d6da';
     
-    // Show default color for current row during input (not flipping)
+    // Show default color for current row during input
     if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) {
-      // During flip animation, don't show colors yet
-      if (isFlipping) return '#d3d6da';
       // If not submitted yet, show default color
       if (!guesses[rowIndex]) return '#d3d6da';
     }
@@ -95,11 +93,11 @@ export default function GameScreen() {
   };
 
   const getTileStyle = (rowIndex, colIndex) => {
-    // Regular flip animation for any row during submission
+    // Regular flip animation for current row during submission
     if (isFlipping && rowIndex === currentRow) {
       return {
         transform: [{
-          rotateY: flipRowAnimations[rowIndex][colIndex].interpolate({
+          rotateX: flipRowAnimations[rowIndex][colIndex].interpolate({
             inputRange: [0, 0.5, 1],
             outputRange: ['0deg', '90deg', '0deg']
           })
@@ -111,7 +109,7 @@ export default function GameScreen() {
     if (celebrationStep === 1 && rowIndex === currentRow && gameStatus === 'won') {
       return {
         transform: [{
-          rotateY: flipAnimations[colIndex].interpolate({
+          rotateX: flipAnimations[colIndex].interpolate({
             inputRange: [0, 0.5, 1],
             outputRange: ['0deg', '90deg', '0deg']
           })
@@ -159,18 +157,24 @@ export default function GameScreen() {
     // Start flip animation
     setIsFlipping(true);
     
+    // Update the guess immediately so colors can be calculated
+    const newGuesses = [...guesses];
+    newGuesses[currentRow] = currentGuess;
+    setGuesses(newGuesses);
+    updateKeyboardStatus(currentGuess, targetWord);
+    
     // Create flip animation for current row
     const flipSequence = flipRowAnimations[currentRow].map((anim, index) => 
       Animated.timing(anim, {
         toValue: 1,
-        duration: 300,
-        delay: index * 100,
+        duration: 400,
+        delay: index * 80,
         useNativeDriver: true,
       })
     );
     
-    // Start flip animation
-    Animated.stagger(100, flipSequence).start(() => {
+    // Start flip animation with stagger
+    Animated.stagger(80, flipSequence).start(() => {
       // After flip animation completes, process the guess
       processGuess();
     });
@@ -182,11 +186,7 @@ export default function GameScreen() {
     // Reset flip animations for current row
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
-    const newGuesses = [...guesses];
-    newGuesses[currentRow] = currentGuess;
-    setGuesses(newGuesses);
-
-    updateKeyboardStatus(currentGuess, targetWord);
+    // Game logic processing (guesses and keyboard already updated in submitGuess)
 
     if (currentGuess === targetWord) {
       setGameStatus('won');
@@ -220,14 +220,14 @@ export default function GameScreen() {
     const flipSequence = flipAnimations.map((anim, index) => 
       Animated.timing(anim, {
         toValue: 1,
-        duration: 300,
-        delay: index * 100,
+        duration: 400,
+        delay: index * 80,
         useNativeDriver: true,
       })
     );
     
     Animated.sequence([
-      Animated.stagger(100, flipSequence),
+      Animated.stagger(80, flipSequence),
       Animated.delay(200)
     ]).start(() => {
       // Stage B: Confetti and "GREAT!" text
