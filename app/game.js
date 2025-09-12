@@ -175,6 +175,8 @@ export default function GameScreen() {
         });
       }
     }
+  }
+  )
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
