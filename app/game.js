@@ -601,7 +601,7 @@ export default function GameScreen() {
         setGameStatus('won');
         
         // Complete the game with skip flag
-        completeGame(true, finalTime, currentRow, true).then((earnedCoins) => {
+        completeGame(true, finalTime, true).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
         
