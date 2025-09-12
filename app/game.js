@@ -45,6 +45,10 @@ export default function GameScreen() {
   })));
   const [greatTextScale] = useState(new Animated.Value(0.8));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipRowAnimations] = useState(Array.from({ length: 6 }, () => 
+    Array.from({ length: 5 }, () => new Animated.Value(0))
+  ));
 
   useEffect(() => {
     if (!gameStarted.current) {
@@ -65,7 +69,7 @@ export default function GameScreen() {
 
   const getTileColor = (letter, position, rowIndex) => {
     if (rowIndex > currentRow) return '#d3d6da';
-    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) return '#d3d6da';
+    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating && !isFlipping) return '#d3d6da';
     
     if (!letter) return '#d3d6da';
     
@@ -83,6 +87,19 @@ export default function GameScreen() {
   };
 
   const getTileStyle = (rowIndex, colIndex) => {
+    // Regular flip animation for any row during submission
+    if (isFlipping && rowIndex === currentRow) {
+      return {
+        transform: [{
+          rotateY: flipRowAnimations[rowIndex][colIndex].interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: ['0deg', '90deg', '0deg']
+          })
+        }]
+      };
+    }
+    
+    // Victory celebration flip animation
     if (celebrationStep === 1 && rowIndex === currentRow && gameStatus === 'won') {
       return {
         transform: [{
@@ -114,7 +131,7 @@ export default function GameScreen() {
   };
 
   const handleKeyPress = (key) => {
-    if (gameStatus !== 'playing' || isCelebrating) return;
+    if (gameStatus !== 'playing' || isCelebrating || isFlipping) return;
 
     if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
@@ -124,12 +141,38 @@ export default function GameScreen() {
   };
 
   const handleSubmit = () => {
-    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing' || isCelebrating) return;
+    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing' || isCelebrating || isFlipping) return;
     submitGuess();
   };
 
   const submitGuess = () => {
-    if (currentGuess.length !== 5 || !isValidWord(currentGuess)) return;
+    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || isFlipping) return;
+
+    // Start flip animation
+    setIsFlipping(true);
+    
+    // Create flip animation for current row
+    const flipSequence = flipRowAnimations[currentRow].map((anim, index) => 
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 300,
+        delay: index * 100,
+        useNativeDriver: true,
+      })
+    );
+    
+    // Start flip animation
+    Animated.stagger(100, flipSequence).start(() => {
+      // After flip animation completes, process the guess
+      processGuess();
+    });
+  };
+
+  const processGuess = () => {
+    setIsFlipping(false);
+    
+    // Reset flip animations for current row
+    flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
     const newGuesses = [...guesses];
     newGuesses[currentRow] = currentGuess;
@@ -139,7 +182,10 @@ export default function GameScreen() {
 
     if (currentGuess === targetWord) {
       setGameStatus('won');
-      startCelebration();
+      // Delay celebration to allow color change to be visible
+      setTimeout(() => {
+        startCelebration();
+      }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
@@ -278,7 +324,7 @@ export default function GameScreen() {
   };
 
   const handleBooster = async (type) => {
-    if (isCelebrating) return;
+    if (isCelebrating || isFlipping) return;
     
     let cost = 0;
     switch (type) {
@@ -341,16 +387,18 @@ export default function GameScreen() {
   };
 
   const isSubmitEnabled = () => {
-    return currentGuess.length === 5 && isValidWord(currentGuess);
+    return currentGuess.length === 5 && isValidWord(currentGuess) && !isFlipping;
   };
 
   const getSubmitButtonStyle = () => {
+    if (isFlipping) return { backgroundColor: '#9ca3af' };
     if (currentGuess.length < 5) return { backgroundColor: '#9ca3af' };
     if (!isValidWord(currentGuess)) return { backgroundColor: '#ef4444' };
     return { backgroundColor: '#3b82f6' };
   };
 
   const getSubmitButtonText = () => {
+    if (isFlipping) return 'CHECKING...';
     if (currentGuess.length < 5) return 'SUBMIT';
     if (!isValidWord(currentGuess)) return 'NOT A WORD';
     return 'SUBMIT';
@@ -475,7 +523,7 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, coins < 15 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
-            disabled={coins < 15 || isCelebrating}
+            disabled={coins < 15 || isCelebrating || isFlipping}
           >
             <Ionicons name="search" size={24} color="white" />
             <View style={styles.badge}>
@@ -486,7 +534,7 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 25 && styles.disabledBooster]}
             onPress={() => handleBooster('hint')}
-            disabled={coins < 25 || hintUsed || isCelebrating}
+            disabled={coins < 25 || hintUsed || isCelebrating || isFlipping}
           >
             <Ionicons name="target" size={24} color="white" />
             <View style={styles.badge}>
@@ -498,7 +546,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.submitButton, getSubmitButtonStyle()]}
           onPress={handleSubmit}
-          disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating}
+          disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
         >
           <Text style={styles.submitButtonText}>
             {getSubmitButtonText()}
@@ -508,7 +556,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.skipButton, coins < 50 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 50 || isCelebrating}
+          disabled={coins < 50 || isCelebrating || isFlipping}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
