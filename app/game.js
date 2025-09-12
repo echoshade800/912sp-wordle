@@ -1372,7 +1372,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: 4,
     marginBottom: 12,
   },
   gameOverAnswer: {
@@ -1467,7 +1467,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: 4,
     marginBottom: 12,
   },
   gameOverAnswer: {
