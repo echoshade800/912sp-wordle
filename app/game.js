@@ -1014,7 +1014,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 8,
-    gap: 6,
+    gap: 4,
   },
   key: {
     minWidth: 32,
@@ -1050,12 +1050,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   backKeyText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '900',
     color: '#374151',
   },
   keyText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
     color: '#374151',
   },
