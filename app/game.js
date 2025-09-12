@@ -753,7 +753,7 @@ export default function GameScreen() {
                   >
                     <Text style={[
                       styles.keyText,
-                      getKeyColor(key) !== '#ffffff' && { color: 'white' },
+                      getKeyColor(key) !== '#ffffff' ? { color: 'white' } : { color: '#374151' },
                       disabledKeys.has(key) && { color: '#6b7280' }
                     ]}>
                       {key}
@@ -1052,12 +1052,12 @@ const styles = StyleSheet.create({
   backKeyText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#374151',
   },
   keyText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#374151',
   },
   bottomActions: {
     flexDirection: 'row',
