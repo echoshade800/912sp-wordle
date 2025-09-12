@@ -434,7 +434,9 @@ const styles = StyleSheet.create({
   keyText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#333333',
+    zIndex: 10,
+    textAlign: 'center',
   },
   submitSection: {
     paddingHorizontal: 20,
