@@ -198,7 +198,7 @@ export default function GameScreen() {
     if (status === 'correct') return '#6aaa64';
     if (status === 'present') return '#c9b458';
     if (status === 'absent') return '#787c7e';
-    return '#d3d6da';
+    return '#ffffff';
   };
 
   const getTileStyle = (rowIndex, colIndex) => {
@@ -753,7 +753,7 @@ export default function GameScreen() {
                   >
                     <Text style={[
                       styles.keyText,
-                      getKeyColor(key) !== '#F9FAFB' && { color: 'white' },
+                      getKeyColor(key) !== '#ffffff' && { color: 'white' },
                       disabledKeys.has(key) && { color: '#6b7280' }
                     ]}>
                       {key}
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1037,7 +1037,7 @@ const styles = StyleSheet.create({
     minWidth: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
