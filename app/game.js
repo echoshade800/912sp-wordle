@@ -25,8 +25,8 @@ const BACKGROUND_COLORS = [
 ];
 
 const { width, height } = Dimensions.get('window');
-const GRID_SIZE = Math.min(width - 40, 350);
-const TILE_SIZE = (GRID_SIZE - 20) / 5;
+const GRID_SIZE = Math.min(width - 60, 320);
+const TILE_SIZE = (GRID_SIZE - 30) / 5;
 
 const KEYBOARD_LAYOUT = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
