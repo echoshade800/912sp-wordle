@@ -605,7 +605,6 @@ export default function GameScreen() {
               const letter = rowIndex === currentRow && gameStatus === 'playing' 
                 ? currentGuess[colIndex] || ''
                 : guess[colIndex] || '';
-              const isHintTile = lockedPositions.has(colIndex) && rowIndex === currentRow;
               
               return (
                 <Animated.View
@@ -613,7 +612,6 @@ export default function GameScreen() {
                   style={[
                     styles.tile,
                     { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
-                    isHintTile && styles.hintTile,
                     getTileStyle(rowIndex, colIndex)
                   ]}
                 >
@@ -790,10 +788,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.9)',
     backgroundColor: 'transparent',
-  },
-  hintTile: {
-    borderColor: '#ffd60a',
-    borderWidth: 3,
   },
   tileText: {
     fontSize: 24,
