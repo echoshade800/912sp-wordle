@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   key: {
-    minWidth: 36,
+    minWidth: 32,
     height: 52,
     borderRadius: 8,
     justifyContent: 'center',
