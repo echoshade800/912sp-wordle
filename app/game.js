@@ -37,7 +37,6 @@ export default function GameScreen() {
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
   const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: confetti, 3: modal
   const [flipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
-  const [currentRowFlipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
   const [confettiAnimations] = useState(Array.from({ length: 20 }, () => ({
     translateY: new Animated.Value(-100),
     translateX: new Animated.Value(0),
@@ -46,8 +45,6 @@ export default function GameScreen() {
   })));
   const [greatTextScale] = useState(new Animated.Value(0.8));
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFlipping, setIsFlipping] = useState(false);
-  const [showColors, setShowColors] = useState(Array(6).fill(false));
 
   useEffect(() => {
     if (!gameStarted.current) {
@@ -68,12 +65,9 @@ export default function GameScreen() {
 
   const getTileColor = (letter, position, rowIndex) => {
     if (rowIndex > currentRow) return '#d3d6da';
-    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating && !showColors[rowIndex]) return '#d3d6da';
+    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) return '#d3d6da';
     
     if (!letter) return '#d3d6da';
-    
-    // Don't show colors until flip animation is complete for this row
-    if (!showColors[rowIndex] && rowIndex < currentRow) return '#d3d6da';
     
     if (targetWord[position] === letter) return '#6aaa64';
     if (targetWord.includes(letter)) return '#c9b458';
@@ -89,23 +83,10 @@ export default function GameScreen() {
   };
 
   const getTileStyle = (rowIndex, colIndex) => {
-    // Victory celebration flip animation
-    if (celebrationStep === 1 && rowIndex === currentRow - 1 && gameStatus === 'won') {
+    if (celebrationStep === 1 && rowIndex === currentRow && gameStatus === 'won') {
       return {
         transform: [{
           rotateY: flipAnimations[colIndex].interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: ['0deg', '90deg', '0deg']
-          })
-        }]
-      };
-    }
-    
-    // Regular submission flip animation
-    if (isFlipping && rowIndex === currentRow - 1) {
-      return {
-        transform: [{
-          rotateY: currentRowFlipAnimations[colIndex].interpolate({
             inputRange: [0, 0.5, 1],
             outputRange: ['0deg', '90deg', '0deg']
           })
@@ -133,7 +114,7 @@ export default function GameScreen() {
   };
 
   const handleKeyPress = (key) => {
-    if (gameStatus !== 'playing' || isCelebrating || isFlipping) return;
+    if (gameStatus !== 'playing' || isCelebrating) return;
 
     if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
@@ -143,52 +124,22 @@ export default function GameScreen() {
   };
 
   const handleSubmit = () => {
-    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing' || isCelebrating || isFlipping) return;
+    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing' || isCelebrating) return;
     submitGuess();
   };
 
   const submitGuess = () => {
     if (currentGuess.length !== 5 || !isValidWord(currentGuess)) return;
 
-    setIsFlipping(true);
-    
-    // Start flip animation for current row
-    const flipSequence = currentRowFlipAnimations.map((anim, index) => {
-      anim.setValue(0); // Reset animation
-      return Animated.timing(anim, {
-        toValue: 1,
-        duration: 600,
-        delay: index * 100,
-        useNativeDriver: true,
-      });
-    });
-
-    Animated.parallel(flipSequence).start(() => {
-      // After flip animation completes, process the guess
-      processGuessAfterFlip();
-    });
-  };
-
-  const processGuessAfterFlip = () => {
     const newGuesses = [...guesses];
     newGuesses[currentRow] = currentGuess;
     setGuesses(newGuesses);
 
-    // Show colors for this row
-    const newShowColors = [...showColors];
-    newShowColors[currentRow] = true;
-    setShowColors(newShowColors);
-
     updateKeyboardStatus(currentGuess, targetWord);
-
-    setIsFlipping(false);
 
     if (currentGuess === targetWord) {
       setGameStatus('won');
-      // Delay celebration to let colors show
-      setTimeout(() => {
-        startCelebration();
-      }, 300);
+      startCelebration();
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
@@ -210,7 +161,7 @@ export default function GameScreen() {
   const startCelebration = () => {
     setIsCelebrating(true);
     setCelebrationStep(1);
-
+    
     // Stage A: Flip animation
     const flipSequence = flipAnimations.map((anim, index) => 
       Animated.timing(anim, {
@@ -220,7 +171,7 @@ export default function GameScreen() {
         useNativeDriver: true,
       })
     );
-
+    
     Animated.sequence([
       Animated.stagger(100, flipSequence),
       Animated.delay(200)
@@ -325,11 +276,6 @@ export default function GameScreen() {
       setIsSubmitting(false);
     }
   };
-
-  // Reset animations and colors when starting new game
-  useEffect(() => {
-    setShowColors(Array(6).fill(false));
-  }, [targetWord]);
 
   const handleBooster = async (type) => {
     if (isCelebrating) return;
@@ -552,7 +498,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.submitButton, getSubmitButtonStyle()]}
           onPress={handleSubmit}
-          disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
+          disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating}
         >
           <Text style={styles.submitButtonText}>
             {getSubmitButtonText()}
@@ -562,7 +508,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.skipButton, coins < 50 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 50 || isCelebrating || isFlipping}
+          disabled={coins < 50 || isCelebrating}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
