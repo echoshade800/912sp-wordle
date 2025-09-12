@@ -169,13 +169,12 @@ export default function GameScreen() {
       const finalTime = endTime - startTime;
       
       if (gameStatus === 'won') {
-        completeGame(true, finalTime, currentRow, false).then((earnedCoins) => {
+        completeGame(true, finalTime).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
       }
     }
   }, [gameStatus, startTime, completeGame]);
-  )
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
@@ -602,7 +601,7 @@ export default function GameScreen() {
         setGameStatus('won');
         
         // Complete the game with skip flag
-        completeGame(true, finalTime, currentRow, true).then((earnedCoins) => {
+        completeGame(true, finalTime, true).then((earnedCoins) => {
           setCoinsEarnedForDisplay(earnedCoins || 0);
         });
         
@@ -1340,101 +1339,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
-  },
-  gameOverModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  gameOverModal: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 340,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  gameOverTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 12,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  gameOverSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  gameOverAnswer: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6aaa64',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  gameOverButtons: {
-    width: '100%',
-    gap: 12,
-  },
-  retryButton: {
-    backgroundColor: '#6aaa64',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  retryButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  retryButtonLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  noThanksButton: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  noThanksButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
   },
   gameOverModalOverlay: {
     flex: 1,
