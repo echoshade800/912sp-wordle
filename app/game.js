@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
@@ -33,6 +33,18 @@ export default function GameScreen() {
   const [hintUsed, setHintUsed] = useState(false);
   const [hintPosition, setHintPosition] = useState(-1);
   const gameStarted = useRef(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: confetti, 3: modal
+  const [flipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
+  const [confettiAnimations] = useState(Array.from({ length: 20 }, () => ({
+    translateY: new Animated.Value(-100),
+    translateX: new Animated.Value(0),
+    opacity: new Animated.Value(1),
+    rotate: new Animated.Value(0)
+  })));
+  const [greatTextScale] = useState(new Animated.Value(0.8));
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!gameStarted.current) {
@@ -53,7 +65,7 @@ export default function GameScreen() {
 
   const getTileColor = (letter, position, rowIndex) => {
     if (rowIndex > currentRow) return '#d3d6da';
-    if (rowIndex === currentRow && gameStatus === 'playing') return '#d3d6da';
+    if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating) return '#d3d6da';
     
     if (!letter) return '#d3d6da';
     
@@ -68,6 +80,20 @@ export default function GameScreen() {
     if (status === 'present') return '#c9b458';
     if (status === 'absent') return '#787c7e';
     return '#d3d6da';
+  };
+
+  const getTileStyle = (rowIndex, colIndex) => {
+    if (celebrationStep === 1 && rowIndex === currentRow && gameStatus === 'won') {
+      return {
+        transform: [{
+          rotateY: flipAnimations[colIndex].interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: ['0deg', '90deg', '0deg']
+          })
+        }]
+      };
+    }
+    return {};
   };
 
   const updateKeyboardStatus = (guess, targetWord) => {
@@ -88,7 +114,7 @@ export default function GameScreen() {
   };
 
   const handleKeyPress = (key) => {
-    if (gameStatus !== 'playing') return;
+    if (gameStatus !== 'playing' || isCelebrating) return;
 
     if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
@@ -98,7 +124,7 @@ export default function GameScreen() {
   };
 
   const handleSubmit = () => {
-    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing') return;
+    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing' || isCelebrating) return;
     submitGuess();
   };
 
@@ -113,16 +139,7 @@ export default function GameScreen() {
 
     if (currentGuess === targetWord) {
       setGameStatus('won');
-      setTimeout(() => {
-        Alert.alert(
-          `Level ${currentLevel} Cleared! 🎉`,
-          `Great job! You found "${targetWord}" in ${currentRow + 1} attempts!`,
-          [
-            { text: 'Next Level', onPress: () => router.replace('/') },
-            { text: 'Home', onPress: () => router.replace('/') }
-          ]
-        );
-      }, 1000);
+      startCelebration();
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
@@ -141,7 +158,128 @@ export default function GameScreen() {
     }
   };
 
+  const startCelebration = () => {
+    setIsCelebrating(true);
+    setCelebrationStep(1);
+    
+    // Stage A: Flip animation
+    const flipSequence = flipAnimations.map((anim, index) => 
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 300,
+        delay: index * 100,
+        useNativeDriver: true,
+      })
+    );
+    
+    Animated.sequence([
+      Animated.stagger(100, flipSequence),
+      Animated.delay(200)
+    ]).start(() => {
+      // Stage B: Confetti and "GREAT!" text
+      setCelebrationStep(2);
+      startConfettiAnimation();
+    });
+  };
+
+  const startConfettiAnimation = () => {
+    // Animate "GREAT!" text
+    Animated.sequence([
+      Animated.timing(greatTextScale, {
+        toValue: 1.05,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(greatTextScale, {
+        toValue: 1.0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    // Animate confetti
+    const confettiAnimationsList = confettiAnimations.map((anim, index) => {
+      const isLeft = index % 2 === 0;
+      const startX = isLeft ? -50 : width + 50;
+      const endX = isLeft ? width * 0.3 + Math.random() * width * 0.4 : width * 0.3 + Math.random() * width * 0.4;
+      
+      anim.translateX.setValue(startX);
+      anim.translateY.setValue(-100);
+      anim.opacity.setValue(1);
+      anim.rotate.setValue(0);
+      
+      return Animated.parallel([
+        Animated.timing(anim.translateX, {
+          toValue: endX,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.translateY, {
+          toValue: height + 100,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.opacity, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.rotate, {
+          toValue: 360,
+          duration: 1200,
+          useNativeDriver: true,
+        })
+      ]);
+    });
+
+    Animated.parallel(confettiAnimationsList).start(() => {
+      // Stage C: Show modal
+      setTimeout(() => {
+        setCelebrationStep(3);
+        setShowCelebrationModal(true);
+      }, 300);
+    });
+  };
+
+  const handleNextLevel = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API call - replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      await completeGame(true, finalTime);
+      
+      // Reset celebration state
+      setIsCelebrating(false);
+      setShowCelebrationModal(false);
+      setCelebrationStep(0);
+      flipAnimations.forEach(anim => anim.setValue(0));
+      greatTextScale.setValue(0.8);
+      
+      // Start new game
+      const newWord = getRandomWord();
+      setTargetWord(newWord);
+      setGuesses(Array(6).fill(''));
+      setCurrentGuess('');
+      setCurrentRow(0);
+      setGameStatus('playing');
+      setKeyboardStatus({});
+      setHintUsed(false);
+      setHintPosition(-1);
+      
+    } catch (error) {
+      Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleBooster = async (type) => {
+    if (isCelebrating) return;
+    
     let cost = 0;
     switch (type) {
       case 'dart':
@@ -220,6 +358,45 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Celebration Overlay */}
+      {isCelebrating && (
+        <View style={styles.celebrationOverlay}>
+          {celebrationStep === 2 && (
+            <>
+              {/* "GREAT!" Text */}
+              <Animated.View style={[
+                styles.greatTextContainer,
+                { transform: [{ scale: greatTextScale }] }
+              ]}>
+                <Text style={styles.greatText}>GREAT!</Text>
+              </Animated.View>
+              
+              {/* Confetti */}
+              {confettiAnimations.map((anim, index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.confetti,
+                    {
+                      backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'][index % 6],
+                      transform: [
+                        { translateX: anim.translateX },
+                        { translateY: anim.translateY },
+                        { rotate: anim.rotate.interpolate({
+                          inputRange: [0, 360],
+                          outputRange: ['0deg', '360deg']
+                        })}
+                      ],
+                      opacity: anim.opacity
+                    }
+                  ]}
+                />
+              ))}
+            </>
+          )}
+        </View>
+      )}
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -241,16 +418,17 @@ export default function GameScreen() {
               const isHintTile = hintUsed && hintPosition === colIndex && rowIndex === currentRow;
               
               return (
-                <View
+                <Animated.View
                   key={colIndex}
                   style={[
                     styles.tile,
                     { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
-                    isHintTile && styles.hintTile
+                    isHintTile && styles.hintTile,
+                    getTileStyle(rowIndex, colIndex)
                   ]}
                 >
                   <Text style={styles.tileText}>{letter}</Text>
-                </View>
+                </Animated.View>
               );
             })}
           </View>
@@ -297,7 +475,7 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, coins < 15 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
-            disabled={coins < 15}
+            disabled={coins < 15 || isCelebrating}
           >
             <Ionicons name="search" size={24} color="white" />
             <View style={styles.badge}>
@@ -308,7 +486,7 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 25 && styles.disabledBooster]}
             onPress={() => handleBooster('hint')}
-            disabled={coins < 25 || hintUsed}
+            disabled={coins < 25 || hintUsed || isCelebrating}
           >
             <Ionicons name="target" size={24} color="white" />
             <View style={styles.badge}>
@@ -320,7 +498,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.submitButton, getSubmitButtonStyle()]}
           onPress={handleSubmit}
-          disabled={currentGuess.length < 5 || !isValidWord(currentGuess)}
+          disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating}
         >
           <Text style={styles.submitButtonText}>
             {getSubmitButtonText()}
@@ -330,7 +508,7 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.skipButton, coins < 50 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 50}
+          disabled={coins < 50 || isCelebrating}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
@@ -338,6 +516,36 @@ export default function GameScreen() {
           </View>
         </TouchableOpacity>
       </View>
+
+      {/* Celebration Modal */}
+      <Modal
+        visible={showCelebrationModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.celebrationModal}>
+            <View style={styles.ribbonContainer}>
+              <Text style={styles.ribbonText}>WELL DONE!</Text>
+            </View>
+            
+            <View style={styles.rewardContainer}>
+              <Ionicons name="star" size={48} color="#FFD700" />
+              <Text style={styles.rewardText}>+20 Coins</Text>
+            </View>
+            
+            <TouchableOpacity
+              style={[styles.nextButton, isSubmitting && styles.disabledButton]}
+              onPress={handleNextLevel}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.nextButtonText}>
+                {isSubmitting ? 'LOADING...' : 'NEXT'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -531,5 +739,110 @@ const styles = StyleSheet.create({
   },
   disabledBooster: {
     opacity: 0.5,
+  },
+  celebrationOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    pointerEvents: 'none',
+  },
+  greatTextContainer: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  greatText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'white',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  confetti: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  celebrationModal: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '80%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  ribbonContainer: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  ribbonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  rewardContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  rewardText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+  },
+  nextButton: {
+    backgroundColor: '#6aaa64',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nextButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
