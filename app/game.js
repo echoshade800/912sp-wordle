@@ -18,7 +18,7 @@ const TILE_SIZE = (GRID_SIZE - 20) / 5;
 const KEYBOARD_LAYOUT = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
 ];
 
 export default function GameScreen() {
@@ -92,14 +92,14 @@ export default function GameScreen() {
 
     if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (key === 'ENTER') {
-      if (currentGuess.length !== 5) return;
-      if (!isValidWord(currentGuess)) return;
-      
-      submitGuess();
     } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
       setCurrentGuess(prev => prev + key);
     }
+  };
+
+  const handleSubmit = () => {
+    if (currentGuess.length !== 5 || !isValidWord(currentGuess) || gameStatus !== 'playing') return;
+    submitGuess();
   };
 
   const submitGuess = () => {
@@ -207,15 +207,15 @@ export default function GameScreen() {
   };
 
   const getSubmitButtonStyle = () => {
-    if (currentGuess.length < 5) return { backgroundColor: '#787c7e' };
-    if (!isValidWord(currentGuess)) return { backgroundColor: '#ff4444' };
-    return { backgroundColor: '#6aaa64' };
+    if (currentGuess.length < 5) return { backgroundColor: '#9ca3af' };
+    if (!isValidWord(currentGuess)) return { backgroundColor: '#ef4444' };
+    return { backgroundColor: '#3b82f6' };
   };
 
   const getSubmitButtonText = () => {
-    if (currentGuess.length < 5) return 'ENTER';
+    if (currentGuess.length < 5) return 'SUBMIT';
     if (!isValidWord(currentGuess)) return 'NOT A WORD';
-    return 'ENTER';
+    return 'SUBMIT';
   };
 
   return (
@@ -261,74 +261,81 @@ export default function GameScreen() {
         {KEYBOARD_LAYOUT.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.keyboardRow}>
             {row.map((key) => {
-              let keyStyle = [styles.key];
-              let textStyle = [styles.keyText];
-              
-              if (key === 'ENTER') {
-                keyStyle.push(styles.enterKey, getSubmitButtonStyle());
-                textStyle.push(styles.enterKeyText);
-              } else if (key === 'BACK') {
-                keyStyle.push(styles.backKey);
+              if (key === 'BACK') {
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={styles.backKey}
+                    onPress={() => handleKeyPress(key)}
+                  >
+                    <Text style={styles.backKeyText}>×</Text>
+                  </TouchableOpacity>
+                );
               } else {
-                keyStyle.push({ backgroundColor: getKeyColor(key) });
-                if (getKeyColor(key) !== '#d3d6da') {
-                  textStyle.push({ color: 'white' });
-                }
-              }
-              
-              return (
-                <TouchableOpacity
-                  key={key}
-                  style={keyStyle}
-                  onPress={() => handleKeyPress(key)}
-                  disabled={!isSubmitEnabled() && key === 'ENTER'}
-                >
-                  {key === 'BACK' ? (
-                    <Ionicons name="backspace" size={20} color="#333" />
-                  ) : (
-                    <Text style={textStyle}>
-                      {key === 'ENTER' ? getSubmitButtonText() : key}
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.key, { backgroundColor: getKeyColor(key) }]}
+                    onPress={() => handleKeyPress(key)}
+                  >
+                    <Text style={[
+                      styles.keyText,
+                      getKeyColor(key) !== '#ffffff' && { color: 'white' }
+                    ]}>
+                      {key}
                     </Text>
-                  )}
-                </TouchableOpacity>
-              );
+                  </TouchableOpacity>
+                );
+              }
             })}
           </View>
         ))}
       </View>
 
-      <View style={styles.boostersBar}>
+      <View style={styles.bottomActions}>
+        <View style={styles.boostersRow}>
+          <TouchableOpacity
+            style={[styles.circularBooster, coins < 15 && styles.disabledBooster]}
+            onPress={() => handleBooster('dart')}
+            disabled={coins < 15}
+          >
+            <Ionicons name="search" size={24} color="white" />
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>2</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 25 && styles.disabledBooster]}
+            onPress={() => handleBooster('hint')}
+            disabled={coins < 25 || hintUsed}
+          >
+            <Ionicons name="target" size={24} color="white" />
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>3</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
-          style={[styles.boosterButton, coins < 15 && styles.disabledButton]}
-          onPress={() => handleBooster('dart')}
-          disabled={coins < 15}
+          style={[styles.submitButton, getSubmitButtonStyle()]}
+          onPress={handleSubmit}
+          disabled={currentGuess.length < 5 || !isValidWord(currentGuess)}
         >
-          <Ionicons name="location" size={20} color={coins >= 15 ? "#ff6b35" : "#ccc"} />
-          <Text style={[styles.boosterText, coins < 15 && styles.disabledText]}>
-            Dart (15)
+          <Text style={styles.submitButtonText}>
+            {getSubmitButtonText()}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.boosterButton, coins < 25 && styles.disabledButton]}
-          onPress={() => handleBooster('hint')}
-          disabled={coins < 25 || hintUsed}
-        >
-          <Ionicons name="bulb" size={20} color={coins >= 25 && !hintUsed ? "#ffd60a" : "#ccc"} />
-          <Text style={[styles.boosterText, (coins < 25 || hintUsed) && styles.disabledText]}>
-            Hint (25)
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.boosterButton, coins < 50 && styles.disabledButton]}
+          style={[styles.skipButton, coins < 50 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
           disabled={coins < 50}
         >
-          <Ionicons name="play-forward" size={20} color={coins >= 50 ? "#06d6a0" : "#ccc"} />
-          <Text style={[styles.boosterText, coins < 50 && styles.disabledText]}>
-            Skip (50)
-          </Text>
+          <Ionicons name="play-forward" size={24} color="white" />
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>1</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -390,72 +397,139 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   keyboard: {
-    paddingHorizontal: 8,
-    marginTop: 20,
+    paddingHorizontal: 4,
+    marginTop: 16,
   },
   keyboardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 6,
-    gap: 4,
+    marginBottom: 8,
+    gap: 6,
   },
   key: {
-    minWidth: 28,
-    height: 44,
-    borderRadius: 4,
+    minWidth: 32,
+    height: 48,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  enterKey: {
-    minWidth: 60,
-  },
-  backKey: {
-    minWidth: 40,
-    backgroundColor: '#d3d6da',
-  },
-  keyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  enterKeyText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  boostersBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginTop: 'auto',
-  },
-  boosterButton: {
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'white',
-    minWidth: 80,
+    paddingHorizontal: 4,
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  disabledButton: {
-    opacity: 0.5,
+  backKey: {
+    minWidth: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#4b5563',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  boosterText: {
+  backKeyText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  keyText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginTop: 16,
+  },
+  boostersRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  circularBooster: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#f97316',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
-    marginTop: 4,
+    fontWeight: 'bold',
+    color: 'white',
   },
-  disabledText: {
-    color: '#ccc',
+  submitButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  skipButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  disabledBooster: {
+    opacity: 0.5,
   },
 });
