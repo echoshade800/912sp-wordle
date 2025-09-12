@@ -87,23 +87,23 @@ export default function GameScreen() {
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
-    if (rowIndex > currentRow) return '#d3d6da';
+    if (rowIndex > currentRow) return 'transparent';
     
     // Show default color for current row during flipping
     if (rowIndex === currentRow && isFlipping) {
       // Only show color if this specific tile has completed its flip
       const tileKey = `${rowIndex}-${position}`;
       if (!flippedTiles.has(tileKey)) {
-        return '#d3d6da';
+        return 'transparent';
       }
     }
     
     // Show default color for current row during input (not submitted yet)
     if (rowIndex === currentRow && gameStatus === 'playing' && !isCelebrating && !guesses[rowIndex]) {
-      return '#d3d6da';
+      return 'transparent';
     }
     
-    if (!letter) return '#d3d6da';
+    if (!letter) return 'transparent';
     
     if (targetWord[position] === letter) return '#6aaa64';
     if (targetWord.includes(letter)) return '#c9b458';
@@ -693,8 +693,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#d3d6da',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'transparent',
   },
   hintTile: {
     borderColor: '#ffd60a',
