@@ -563,6 +563,73 @@ export default function GameScreen() {
     });
   };
 
+  const showGameOverDialog = () => {
+    setShowGameOverModal(true);
+    
+    // Show modal animation
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeGameOverModal = () => {
+    Animated.parallel([
+      Animated.timing(gameOverOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(gameOverScale, {
+        toValue: 0.95,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowGameOverModal(false);
+    });
+  };
+
+  const handleRetry = async () => {
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
+      return;
+    }
+
+    // Deduct coins
+    const used = await useBooster('retry', 35);
+    if (!used) return;
+
+    // Close modal
+    closeGameOverModal();
+
+    // Reset game state but keep keyboard colors
+    setGuesses(Array(6).fill(''));
+    setCurrentGuess('');
+    setCurrentRow(0);
+    setGameStatus('playing');
+    setIsFlipping(false);
+    setFlippedTiles(new Set());
+    
+    // Reset flip animations
+    flipRowAnimations.forEach(rowAnims => 
+      rowAnims.forEach(anim => anim.setValue(0))
+    );
+  };
+
+  const handleNoThanks = () => {
+    closeGameOverModal();
+    router.back();
+  };
+
   const isSubmitEnabled = () => {
     return currentGuess.length === 5 && isValidWord(currentGuess) && !isFlipping;
   };
