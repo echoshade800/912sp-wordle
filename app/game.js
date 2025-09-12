@@ -88,10 +88,15 @@ export default function GameScreen() {
   }, [currentLevel, startGame]);
 
   useEffect(() => {
-    if (gameStatus !== 'playing') {
+    if (gameStatus !== 'playing' && gameStatus !== 'skipped') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       completeGame(gameStatus === 'won', finalTime);
+    } else if (gameStatus === 'skipped') {
+      // Handle skipped level - no rewards, just advance level
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      completeGame(false, finalTime, true); // Pass true for isSkipped
     }
   }, [gameStatus, startTime, completeGame]);
 
@@ -375,9 +380,7 @@ export default function GameScreen() {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const endTime = Date.now();
-      const finalTime = endTime - startTime;
-      await completeGame(true, finalTime);
+      // Skip the completeGame call here since it's already handled in useEffect
       
       // Reset celebration state
       setIsCelebrating(false);
@@ -521,9 +524,9 @@ export default function GameScreen() {
         // Update keyboard status to show all letters
         updateKeyboardStatus(targetWord, targetWord);
         
-        // Set game as won and trigger celebration
+        // Set game as skipped (won but no rewards) and trigger celebration
         setTimeout(() => {
-          setGameStatus('won');
+          setGameStatus('skipped');
           setTimeout(() => {
             startCelebration();
           }, 300);
