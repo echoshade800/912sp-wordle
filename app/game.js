@@ -918,7 +918,15 @@ export default function GameScreen() {
             ]}
           >
             <Text style={styles.gameOverTitle}>ROUND OVER</Text>
-            <Text style={styles.gameOverSubtitle}>You've run out of attempts!</Text>
+            
+            <View style={styles.flameIcon}>
+              <Ionicons name="flame" size={48} color="#ff6b35" />
+            </View>
+            
+            <Text style={styles.gameOverSubtitle}>
+              Keep your streak going or your score will be reset!
+            </Text>
+            
             <Text style={styles.gameOverAnswer}>The word was: {targetWord}</Text>
             
             <View style={styles.gameOverButtons}>
