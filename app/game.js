@@ -1061,8 +1061,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 0,
+    paddingBottom: 20,
     marginTop: 16,
+    transform: [{ translateY: -20 }],
   },
   boostersRow: {
     flexDirection: 'row',
