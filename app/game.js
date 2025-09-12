@@ -12,13 +12,13 @@ import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
 
 const { width } = Dimensions.get('window');
-const GRID_SIZE = Math.min(width - 40, 350);
-const TILE_SIZE = (GRID_SIZE - 20) / 5;
+const GRID_SIZE = Math.min(width - 40, 320);
+const TILE_SIZE = (GRID_SIZE - 16) / 5;
 
 const KEYBOARD_LAYOUT = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
 ];
 
 export default function GameScreen() {
@@ -52,10 +52,10 @@ export default function GameScreen() {
   }, [gameStatus, startTime, completeGame]);
 
   const getTileColor = (letter, position, rowIndex) => {
-    if (rowIndex > currentRow) return '#d3d6da';
-    if (rowIndex === currentRow && gameStatus === 'playing') return '#d3d6da';
+    if (rowIndex > currentRow) return 'transparent';
+    if (rowIndex === currentRow && gameStatus === 'playing') return 'transparent';
     
-    if (!letter) return '#d3d6da';
+    if (!letter) return 'transparent';
     
     if (targetWord[position] === letter) return '#6aaa64';
     if (targetWord.includes(letter)) return '#c9b458';
@@ -67,7 +67,7 @@ export default function GameScreen() {
     if (status === 'correct') return '#6aaa64';
     if (status === 'present') return '#c9b458';
     if (status === 'absent') return '#787c7e';
-    return '#d3d6da';
+    return '#ffffff';
   };
 
   const updateKeyboardStatus = (guess, targetWord) => {
@@ -92,14 +92,16 @@ export default function GameScreen() {
 
     if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (key === 'ENTER') {
-      if (currentGuess.length !== 5) return;
-      if (!isValidWord(currentGuess)) return;
-      
-      submitGuess();
     } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
       setCurrentGuess(prev => prev + key);
     }
+  };
+
+  const handleSubmit = () => {
+    if (currentGuess.length !== 5) return;
+    if (!isValidWord(currentGuess)) return;
+    
+    submitGuess();
   };
 
   const submitGuess = () => {
@@ -207,27 +209,49 @@ export default function GameScreen() {
   };
 
   const getSubmitButtonStyle = () => {
-    if (currentGuess.length < 5) return { backgroundColor: '#787c7e' };
-    if (!isValidWord(currentGuess)) return { backgroundColor: '#ff4444' };
-    return { backgroundColor: '#6aaa64' };
+    if (currentGuess.length < 5) return { backgroundColor: '#9ca3af', opacity: 0.6 };
+    if (!isValidWord(currentGuess)) return { backgroundColor: '#9ca3af', opacity: 0.6 };
+    return { backgroundColor: '#6b7280' };
   };
 
   const getSubmitButtonText = () => {
-    if (currentGuess.length < 5) return 'ENTER';
-    if (!isValidWord(currentGuess)) return 'NOT A WORD';
-    return 'ENTER';
+    return 'SUBMIT';
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="chevron-back" size={32} color="#4b5563" />
         </TouchableOpacity>
-        <Text style={styles.levelText}>Level {currentLevel}</Text>
-        <View style={styles.coinsInfo}>
-          <Ionicons name="star" size={20} color="#FFD700" />
-          <Text style={styles.coinsText}>{coins}</Text>
+        
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Text style={styles.logoText}>AI</Text>
+          </View>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <View style={styles.timerContainer}>
+            <Ionicons name="time-outline" size={20} color="#6b7280" />
+          </View>
+          <Text style={styles.scoreLabel}>SCORE</Text>
+          <Text style={styles.scoreValue}>1</Text>
+          <TouchableOpacity style={styles.infoButton}>
+            <Ionicons name="information-circle-outline" size={20} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.headerRight}>
+          <View style={styles.coinsContainer}>
+            <Ionicons name="people" size={16} color="#ffffff" />
+            <View style={styles.coinBadge}>
+              <Text style={styles.coinText}>W</Text>
+            </View>
+            <View style={styles.plusBadge}>
+              <Ionicons name="add" size={12} color="#ffffff" />
+            </View>
+          </View>
         </View>
       </View>
 
@@ -297,38 +321,47 @@ export default function GameScreen() {
         ))}
       </View>
 
+      <View style={styles.submitSection}>
+        <TouchableOpacity
+          style={[styles.submitButton, getSubmitButtonStyle()]}
+          onPress={handleSubmit}
+          disabled={!isSubmitEnabled()}
+        >
+          <Text style={styles.submitButtonText}>{getSubmitButtonText()}</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.boostersBar}>
         <TouchableOpacity
-          style={[styles.boosterButton, coins < 15 && styles.disabledButton]}
+          style={[styles.boosterButton, styles.searchBooster, coins < 15 && styles.disabledButton]}
           onPress={() => handleBooster('dart')}
           disabled={coins < 15}
         >
-          <Ionicons name="location" size={20} color={coins >= 15 ? "#ff6b35" : "#ccc"} />
-          <Text style={[styles.boosterText, coins < 15 && styles.disabledText]}>
-            Dart (15)
-          </Text>
+          <Ionicons name="search" size={24} color="#ffffff" />
+          <View style={styles.boosterBadge}>
+            <Text style={styles.badgeText}>2</Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.boosterButton, coins < 25 && styles.disabledButton]}
+          style={[styles.boosterButton, styles.hintBooster, coins < 25 && styles.disabledButton]}
           onPress={() => handleBooster('hint')}
           disabled={coins < 25 || hintUsed}
         >
-          <Ionicons name="bulb" size={20} color={coins >= 25 && !hintUsed ? "#ffd60a" : "#ccc"} />
-          <Text style={[styles.boosterText, (coins < 25 || hintUsed) && styles.disabledText]}>
-            Hint (25)
-          </Text>
+          <Ionicons name="refresh" size={24} color="#ffffff" />
+          <View style={styles.boosterBadge}>
+            <Text style={styles.badgeText}>3</Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.boosterButton, coins < 50 && styles.disabledButton]}
+          style={[styles.boosterButton, styles.skipBooster, coins < 50 && styles.disabledButton]}
           onPress={() => handleBooster('skip')}
           disabled={coins < 50}
         >
-          <Ionicons name="play-forward" size={20} color={coins >= 50 ? "#06d6a0" : "#ccc"} />
-          <Text style={[styles.boosterText, coins < 50 && styles.disabledText]}>
-            Skip (50)
-          </Text>
+          <Ionicons name="play-forward" size={24} color="#ffffff" />
+          <View style={styles.boosterBadge}>
+            <Text style={styles.badgeText}>1</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -338,124 +371,229 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#a7c4a0',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 10,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
-  levelText: {
-    fontSize: 20,
+  logoContainer: {
+    position: 'absolute',
+    left: 60,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  logoText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
-  coinsInfo: {
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  timerContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(107, 114, 128, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  scoreValue: {
+    fontSize: 24,
+    color: '#374151',
+    fontWeight: 'bold',
+  },
+  infoButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#60a5fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 20,
+  },
+  coinsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    backgroundColor: '#6b7280',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
   },
-  coinsText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+  coinBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#f59e0b',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coinText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  plusBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gameBoard: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 30,
   },
   row: {
     flexDirection: 'row',
-    gap: 4,
-    marginBottom: 4,
+    gap: 3,
+    marginBottom: 3,
   },
   tile: {
     width: TILE_SIZE,
     height: TILE_SIZE,
-    borderRadius: 4,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#d3d6da',
+    borderWidth: 3,
+    borderColor: '#ffffff',
   },
   hintTile: {
     borderColor: '#ffd60a',
     borderWidth: 3,
   },
   tileText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#374151',
   },
   keyboard: {
-    paddingHorizontal: 8,
-    marginTop: 20,
+    paddingHorizontal: 16,
+    marginTop: 10,
   },
   keyboardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 6,
-    gap: 4,
+    marginBottom: 8,
+    gap: 6,
   },
   key: {
-    minWidth: 28,
-    height: 44,
-    borderRadius: 4,
+    minWidth: 32,
+    height: 48,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  enterKey: {
-    minWidth: 60,
-  },
-  backKey: {
-    minWidth: 40,
-    backgroundColor: '#d3d6da',
-  },
-  keyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  enterKeyText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  boostersBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginTop: 'auto',
-  },
-  boosterButton: {
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'white',
-    minWidth: 80,
+    paddingHorizontal: 10,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  disabledButton: {
-    opacity: 0.5,
+  backKey: {
+    minWidth: 48,
+    backgroundColor: '#6b7280',
   },
-  boosterText: {
+  keyText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  submitSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  submitButton: {
+    paddingHorizontal: 40,
+    paddingVertical: 16,
+    borderRadius: 25,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  boostersBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  boosterButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  searchBooster: {
+    backgroundColor: '#f97316',
+  },
+  hintBooster: {
+    backgroundColor: '#a855f7',
+  },
+  skipBooster: {
+    backgroundColor: '#22c55e',
+  },
+  boosterBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
-    marginTop: 4,
+    fontWeight: 'bold',
   },
-  disabledText: {
-    color: '#ccc',
+  disabledButton: {
+    opacity: 0.6,
   },
 });
