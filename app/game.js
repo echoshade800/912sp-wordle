@@ -88,15 +88,10 @@ export default function GameScreen() {
   }, [currentLevel, startGame]);
 
   useEffect(() => {
-    if (gameStatus !== 'playing' && gameStatus !== 'skipped') {
+    if (gameStatus !== 'playing') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       completeGame(gameStatus === 'won', finalTime);
-    } else if (gameStatus === 'skipped') {
-      // Handle skipped level - no rewards, just advance level
-      const endTime = Date.now();
-      const finalTime = endTime - startTime;
-      completeGame(false, finalTime, true); // Pass true for isSkipped
     }
   }, [gameStatus, startTime, completeGame]);
 
@@ -380,7 +375,9 @@ export default function GameScreen() {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Skip the completeGame call here since it's already handled in useEffect
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      await completeGame(true, finalTime);
       
       // Reset celebration state
       setIsCelebrating(false);
@@ -515,22 +512,14 @@ export default function GameScreen() {
         break;
         
       case 'skip':
-        // Fill current row with the correct answer
-        const newGuesses = [...guesses];
-        newGuesses[currentRow] = targetWord;
-        setGuesses(newGuesses);
-        setCurrentGuess(targetWord);
+        // Complete current game as skipped
+        const endTime = Date.now();
+        const finalTime = endTime - startTime;
         
-        // Update keyboard status to show all letters
-        updateKeyboardStatus(targetWord, targetWord);
+        await completeGame(false, finalTime);
         
-        // Set game as skipped (won but no rewards) and trigger celebration
-        setTimeout(() => {
-          setGameStatus('skipped');
-          setTimeout(() => {
-            startCelebration();
-          }, 300);
-        }, 500);
+        // Start new level
+        handleNextLevel();
         break;
     }
     
