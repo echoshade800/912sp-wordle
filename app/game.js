@@ -75,10 +75,6 @@ export default function GameScreen() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
-  
-  // Booster skip tracking
-  const [isBoosterSkipActive, setIsBoosterSkipActive] = useState(false);
-  const [coinsEarnedForDisplay, setCoinsEarnedForDisplay] = useState(20);
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -116,13 +112,13 @@ export default function GameScreen() {
   };
 
   const handleRetry = async () => {
-    if (coins < 20) {
-      Alert.alert('Not Enough Coins', 'You need 20 coins to continue this level.');
+    if (coins < 35) {
+      Alert.alert('Not Enough Coins', 'You need 35 coins to retry this level.');
       return;
     }
 
     // Deduct coins
-    const used = await useBooster('retry', 20);
+    const used = await useBooster('retry', 35);
     if (!used) return;
 
     // Close modal
@@ -164,19 +160,12 @@ export default function GameScreen() {
   }, [currentLevel, startGame]);
 
   useEffect(() => {
-    if (gameStatus !== 'playing' && gameStatus !== 'lost') {
+    if (gameStatus !== 'playing') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      
-      if (gameStatus === 'won') {
-        completeGame(gameStatus === 'won', finalTime, isBoosterSkipActive).then((earnedCoins) => {
-          setCoinsEarnedForDisplay(earnedCoins || 0);
-          setIsBoosterSkipActive(false); // Reset after use
-        });
-      }
+      completeGame(gameStatus === 'won', finalTime);
     }
-  }
-  )
+  }, [gameStatus, startTime, completeGame]);
 
   const getTileColor = (letter, position, rowIndex) => {
     // Show default color for future rows
@@ -451,6 +440,20 @@ export default function GameScreen() {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
+      
       // Reset celebration state
       setIsCelebrating(false);
       setShowCelebrationModal(false);
@@ -476,7 +479,6 @@ export default function GameScreen() {
       // Reset booster states for new level
       setLockedPositions(new Set());
       setDisabledKeys(new Set());
-      setIsBoosterSkipActive(false);
       
     } catch (error) {
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
@@ -531,7 +533,7 @@ export default function GameScreen() {
         };
       case 'skip':
         return {
-          cost: 30,
+          cost: 25,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -585,9 +587,6 @@ export default function GameScreen() {
         break;
         
       case 'skip':
-        // Mark as booster skip and complete the game
-        setIsBoosterSkipActive(true);
-        
         // Complete current game as skipped
         const endTime = Date.now();
         const finalTime = endTime - startTime;
@@ -805,11 +804,11 @@ export default function GameScreen() {
         <TouchableOpacity
           style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 30 || isCelebrating || isFlipping}
+          disabled={coins < 25 || isCelebrating || isFlipping}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>30</Text>
+            <Text style={styles.badgeText}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -828,7 +827,7 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+{coinsEarnedForDisplay} Coins</Text>
+              <Text style={styles.rewardText}>+20 Coins</Text>
             </View>
             
             <TouchableOpacity
@@ -935,8 +934,8 @@ export default function GameScreen() {
               >
                 <View style={styles.retryButtonContent}>
                   <Ionicons name="star" size={20} color="white" />
-                  <Text style={styles.retryButtonText}>20</Text>
-                  <Text style={styles.retryButtonLabel}>Continue</Text>
+                  <Text style={styles.retryButtonText}>35</Text>
+                  <Text style={styles.retryButtonLabel}>Retry</Text>
                 </View>
               </TouchableOpacity>
               
