@@ -840,6 +840,7 @@ export default function GameScreen() {
                 {isSubmitting ? 'LOADING...' : 'NEXT'}
               </Text>
             </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
