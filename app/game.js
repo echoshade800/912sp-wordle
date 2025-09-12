@@ -1051,12 +1051,12 @@ const styles = StyleSheet.create({
   },
   backKeyText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#374151',
   },
   keyText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#374151',
   },
   bottomActions: {
