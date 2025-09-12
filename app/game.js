@@ -65,6 +65,12 @@ export default function GameScreen() {
   const [flippedTiles, setFlippedTiles] = useState(new Set());
   const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
 
+  // Booster modal states
+  const [showBoosterModal, setShowBoosterModal] = useState(false);
+  const [selectedBooster, setSelectedBooster] = useState(null);
+  const [modalOpacity] = useState(new Animated.Value(0));
+  const [modalScale] = useState(new Animated.Value(0.95));
+
   // Booster states
   const [lockedPositions, setLockedPositions] = useState(new Set());
   const [disabledKeys, setDisabledKeys] = useState(new Set());
@@ -430,7 +436,7 @@ export default function GameScreen() {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
-      })
+      }),
     ]).start();
   };
 
