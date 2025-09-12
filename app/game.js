@@ -768,27 +768,43 @@ export default function GameScreen() {
 
       <View style={styles.bottomActions}>
         <View style={styles.boostersRow}>
-          <TouchableOpacity
-            style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
-            onPress={() => handleBooster('dart')}
-            disabled={coins < 10 || isCelebrating || isFlipping}
-          >
-            <Ionicons name="search" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>10</Text>
+          <View style={styles.boosterContainer}>
+            <TouchableOpacity
+              style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
+              onPress={() => handleBooster('dart')}
+              disabled={coins < 10 || isCelebrating || isFlipping}
+            >
+              <Ionicons name="search" size={24} color="white" />
+            </TouchableOpacity>
+            <View style={styles.boosterPrice}>
+              <Text style={styles.boosterPriceStar}>⭐️</Text>
+              <Text style={[
+                styles.boosterPriceText,
+                coins < 10 && styles.boosterPriceTextDisabled
+              ]}>
+                10
+              </Text>
             </View>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 15 && styles.disabledBooster]}
-            onPress={() => handleBooster('hint')}
-            disabled={coins < 15 || isCelebrating || isFlipping}
-          >
-            <Ionicons name="target" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>15</Text>
+          <View style={styles.boosterContainer}>
+            <TouchableOpacity
+              style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 15 && styles.disabledBooster]}
+              onPress={() => handleBooster('hint')}
+              disabled={coins < 15 || isCelebrating || isFlipping}
+            >
+              <Ionicons name="target" size={24} color="white" />
+            </TouchableOpacity>
+            <View style={styles.boosterPrice}>
+              <Text style={styles.boosterPriceStar}>⭐️</Text>
+              <Text style={[
+                styles.boosterPriceText,
+                coins < 15 && styles.boosterPriceTextDisabled
+              ]}>
+                15
+              </Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -801,16 +817,24 @@ export default function GameScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
-          onPress={() => handleBooster('skip')}
-          disabled={coins < 25 || isCelebrating || isFlipping}
-        >
-          <Ionicons name="play-forward" size={24} color="white" />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>25</Text>
+        <View style={styles.skipContainer}>
+          <TouchableOpacity
+            style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
+            onPress={() => handleBooster('skip')}
+            disabled={coins < 25 || isCelebrating || isFlipping}
+          >
+            <Ionicons name="play-forward" size={24} color="white" />
+          </TouchableOpacity>
+          <View style={styles.skipPrice}>
+            <Text style={styles.skipPriceStar}>⭐️</Text>
+            <Text style={[
+              styles.skipPriceText,
+              coins < 25 && styles.skipPriceTextDisabled
+            ]}>
+              25
+            </Text>
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
 
       {/* Celebration Modal */}
@@ -1069,6 +1093,7 @@ const styles = StyleSheet.create({
   boostersRow: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'flex-end',
   },
   circularBooster: {
     width: 56,
@@ -1086,6 +1111,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  boosterContainer: {
+    alignItems: 'center',
+  },
+  boosterPrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 2,
+  },
+  boosterPriceText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  boosterPriceTextDisabled: {
+    color: '#AAAAAA',
+  },
+  boosterPriceStar: {
+    fontSize: 12,
+    color: '#FFD700',
   },
   badge: {
     position: 'absolute',
@@ -1137,6 +1183,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  skipContainer: {
+    alignItems: 'center',
+  },
+  skipPrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 2,
+  },
+  skipPriceText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  skipPriceTextDisabled: {
+    color: '#AAAAAA',
+  },
+  skipPriceStar: {
+    fontSize: 12,
+    color: '#FFD700',
   },
   disabledBooster: {
     opacity: 0.5,
