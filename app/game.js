@@ -774,10 +774,11 @@ export default function GameScreen() {
             disabled={coins < 10 || isCelebrating || isFlipping}
           >
             <Ionicons name="search" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>10</Text>
-            </View>
           </TouchableOpacity>
+          <View style={styles.boosterContainer}>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={[styles.priceText, coins < 10 && styles.disabledPriceText]}>10</Text>
+          </View>
 
           <TouchableOpacity
             style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 15 && styles.disabledBooster]}
@@ -785,10 +786,11 @@ export default function GameScreen() {
             disabled={coins < 15 || isCelebrating || isFlipping}
           >
             <Ionicons name="target" size={24} color="white" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>15</Text>
-            </View>
           </TouchableOpacity>
+          <View style={styles.boosterContainer}>
+            <Text style={styles.starIcon}>⭐️</Text>
+            <Text style={[styles.priceText, coins < 15 && styles.disabledPriceText]}>15</Text>
+          </View>
         </View>
 
         <TouchableOpacity
