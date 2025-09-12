@@ -65,6 +65,10 @@ export default function GameScreen() {
   const [flippedTiles, setFlippedTiles] = useState(new Set());
   const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
 
+  // Booster states
+  const [lockedPositions, setLockedPositions] = useState(new Set());
+  const [disabledKeys, setDisabledKeys] = useState(new Set());
+
   useEffect(() => {
     if (!gameStarted.current) {
       const word = getRandomWord();
@@ -111,6 +115,7 @@ export default function GameScreen() {
   };
 
   const getKeyColor = (key) => {
+    if (disabledKeys.has(key)) return '#9ca3af';
     const status = keyboardStatus[key];
     if (status === 'correct') return '#6aaa64';
     if (status === 'present') return '#c9b458';
@@ -163,12 +168,32 @@ export default function GameScreen() {
   };
 
   const handleKeyPress = (key) => {
-    if (gameStatus !== 'playing' || isCelebrating || isFlipping) return;
+    if (gameStatus !== 'playing' || isCelebrating || isFlipping || disabledKeys.has(key)) return;
 
     if (key === 'BACK') {
-      setCurrentGuess(prev => prev.slice(0, -1));
+      setCurrentGuess(prev => {
+        const newGuess = prev.slice(0, -1);
+        // Restore locked positions when backspacing
+        const restored = newGuess.split('');
+        for (let i = 0; i < 5; i++) {
+          if (lockedPositions.has(i) && i < restored.length) {
+            restored[i] = targetWord[i];
+          }
+        }
+        return restored.join('');
+      });
     } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
-      setCurrentGuess(prev => prev + key);
+      setCurrentGuess(prev => {
+        if (lockedPositions.has(prev.length)) {
+          // Skip locked position
+          const newGuess = prev + targetWord[prev.length];
+          if (newGuess.length < 5 && !lockedPositions.has(newGuess.length)) {
+            return newGuess + key;
+          }
+          return newGuess;
+        }
+        return prev + key;
+      });
     }
   };
 
@@ -370,6 +395,10 @@ export default function GameScreen() {
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
       setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
       
+      // Reset booster states for new level
+      setLockedPositions(new Set());
+      setDisabledKeys(new Set());
+      
     } catch (error) {
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
     } finally {
@@ -381,15 +410,24 @@ export default function GameScreen() {
     if (isCelebrating || isFlipping) return;
     
     let cost = 0;
+    let title = '';
+    let description = '';
+    
     switch (type) {
       case 'dart':
-        cost = 15;
+        cost = 10;
+        title = 'Dart Booster';
+        description = 'Remove up to 3 incorrect letters from the keyboard to help narrow down your guesses.';
         break;
       case 'hint':
-        cost = 25;
+        cost = 15;
+        title = 'Hint Booster';
+        description = 'Reveal and lock one correct letter in the current row to guide your guess.';
         break;
       case 'skip':
-        cost = 50;
+        cost = 25;
+        title = 'Skip Booster';
+        description = 'Skip the current level and advance to the next one without completing it.';
         break;
     }
 
@@ -398,46 +436,96 @@ export default function GameScreen() {
       return;
     }
 
-    const used = await useBooster(type, cost);
-    if (!used) return;
+    Alert.alert(
+      title,
+      `${description}\n\nCost: ${cost} coins\nYour coins: ${coins}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Use Booster', 
+          onPress: async () => {
+            const used = await useBooster(type, cost);
+            if (!used) return;
 
-    switch (type) {
-      case 'dart':
-        // Remove incorrect letters from keyboard
-        const incorrectLetters = Object.keys(keyboardStatus).filter(
-          key => keyboardStatus[key] === 'absent'
-        ).slice(0, 3);
-        Alert.alert('Dart Used! 🎯', `Removed ${incorrectLetters.length} incorrect letters from keyboard.`);
-        break;
-      case 'hint':
-        // Reveal one correct letter position
-        if (!hintUsed) {
-          const availablePositions = [];
-          for (let i = 0; i < 5; i++) {
-            if (currentGuess[i] !== targetWord[i]) {
-              availablePositions.push(i);
+            switch (type) {
+              case 'dart':
+                // Find letters that are definitely not in the target word
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                const incorrectLetters = alphabet.filter(letter => 
+                  !targetWord.includes(letter) && !disabledKeys.has(letter)
+                ).slice(0, 3);
+                
+                if (incorrectLetters.length > 0) {
+                  setDisabledKeys(prev => new Set([...prev, ...incorrectLetters]));
+                  Alert.alert('Dart Used! 🎯', `Removed ${incorrectLetters.length} incorrect letters: ${incorrectLetters.join(', ')}`);
+                } else {
+                  Alert.alert('Dart Used! 🎯', 'No more letters can be eliminated.');
+                }
+                break;
+                
+              case 'hint':
+                // Find available positions that aren't locked yet
+                const availablePositions = [];
+                for (let i = 0; i < 5; i++) {
+                  if (!lockedPositions.has(i)) {
+                    availablePositions.push(i);
+                  }
+                }
+                
+                if (availablePositions.length > 0) {
+                  const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+                  setLockedPositions(prev => new Set([...prev, randomPos]));
+                  
+                  // Update current guess with the hint
+                  setCurrentGuess(prev => {
+                    const newGuess = prev.split('');
+                    newGuess[randomPos] = targetWord[randomPos];
+                    return newGuess.join('');
+                  });
+                  
+                  Alert.alert('Hint Used! 💡', `Revealed letter "${targetWord[randomPos]}" at position ${randomPos + 1}.`);
+                } else {
+                  Alert.alert('Hint Used! 💡', 'All positions are already revealed.');
+                }
+                break;
+                
+              case 'skip':
+                Alert.alert(
+                  'Level Skipped! ⏭️',
+                  `Moving to Level ${currentLevel + 1}`,
+                  [{ 
+                    text: 'Continue', 
+                    onPress: async () => {
+                      // Complete current game as skipped (not won, no score)
+                      const endTime = Date.now();
+                      const finalTime = endTime - startTime;
+                      
+                      // Add to history as skipped game
+                      const skippedGame = {
+                        level: currentLevel,
+                        attempts: currentRow,
+                        startTime,
+                        isComplete: true,
+                        isWon: false,
+                        isSkipped: true,
+                        completionTime: finalTime,
+                        score: 0
+                      };
+                      
+                      const newHistory = [skippedGame, ...gameHistory].slice(0, 50);
+                      await completeGame(false, finalTime);
+                      
+                      // Start new level
+                      handleNextLevel();
+                    }
+                  }]
+                );
+                break;
             }
           }
-          if (availablePositions.length > 0) {
-            const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
-            const newGuess = currentGuess.split('');
-            newGuess[randomPos] = targetWord[randomPos];
-            setCurrentGuess(newGuess.join(''));
-            setHintUsed(true);
-            setHintPosition(randomPos);
-            Alert.alert('Hint Used! 💡', `Revealed letter at position ${randomPos + 1}.`);
-          }
         }
-        break;
-      case 'skip':
-        // Skip to next level
-        Alert.alert(
-          'Level Skipped',
-          `Moving to Level ${currentLevel + 1}`,
-          [{ text: 'Continue', onPress: () => router.replace('/') }]
-        );
-        break;
-    }
+      ]
+    );
   };
 
   const isSubmitEnabled = () => {
@@ -517,7 +605,7 @@ export default function GameScreen() {
               const letter = rowIndex === currentRow && gameStatus === 'playing' 
                 ? currentGuess[colIndex] || ''
                 : guess[colIndex] || '';
-              const isHintTile = hintUsed && hintPosition === colIndex && rowIndex === currentRow;
+              const isHintTile = lockedPositions.has(colIndex) && rowIndex === currentRow;
               
               return (
                 <Animated.View
@@ -555,12 +643,18 @@ export default function GameScreen() {
                 return (
                   <TouchableOpacity
                     key={key}
-                    style={[styles.key, { backgroundColor: getKeyColor(key) }]}
+                    style={[
+                      styles.key, 
+                      { backgroundColor: getKeyColor(key) },
+                      disabledKeys.has(key) && styles.disabledKey
+                    ]}
                     onPress={() => handleKeyPress(key)}
+                    disabled={disabledKeys.has(key)}
                   >
                     <Text style={[
                       styles.keyText,
-                      getKeyColor(key) !== '#ffffff' && { color: 'white' }
+                      getKeyColor(key) !== '#F9FAFB' && { color: 'white' },
+                      disabledKeys.has(key) && { color: '#6b7280' }
                     ]}>
                       {key}
                     </Text>
@@ -575,24 +669,24 @@ export default function GameScreen() {
       <View style={styles.bottomActions}>
         <View style={styles.boostersRow}>
           <TouchableOpacity
-            style={[styles.circularBooster, coins < 15 && styles.disabledBooster]}
+            style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
-            disabled={coins < 15 || isCelebrating || isFlipping}
+            disabled={coins < 10 || isCelebrating || isFlipping}
           >
             <Ionicons name="search" size={24} color="white" />
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>2</Text>
+              <Text style={styles.badgeText}>10</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 25 && styles.disabledBooster]}
+            style={[styles.circularBooster, { backgroundColor: '#8b5cf6' }, coins < 15 && styles.disabledBooster]}
             onPress={() => handleBooster('hint')}
-            disabled={coins < 25 || hintUsed || isCelebrating || isFlipping}
+            disabled={coins < 15 || isCelebrating || isFlipping}
           >
             <Ionicons name="target" size={24} color="white" />
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>3</Text>
+              <Text style={styles.badgeText}>15</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -608,13 +702,13 @@ export default function GameScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.skipButton, coins < 50 && styles.disabledBooster]}
+          style={[styles.skipButton, coins < 25 && styles.disabledBooster]}
           onPress={() => handleBooster('skip')}
-          disabled={coins < 50 || isCelebrating || isFlipping}
+          disabled={coins < 25 || isCelebrating || isFlipping}
         >
           <Ionicons name="play-forward" size={24} color="white" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>1</Text>
+            <Text style={styles.badgeText}>25</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -840,6 +934,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   disabledBooster: {
+    opacity: 0.5,
+  },
+  disabledKey: {
     opacity: 0.5,
   },
   celebrationOverlay: {
