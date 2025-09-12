@@ -839,10 +839,7 @@ export default function GameScreen() {
               <Text style={styles.nextButtonText}>
                 {isSubmitting ? 'LOADING...' : 'NEXT'}
               </Text>
-            <Text style={styles.starIcon}>⭐️</Text>
-            <Text style={styles.starIcon}>⭐️</Text>
-            <Text style={[styles.priceText, coins < 15 && styles.disabledPriceText]}>15</Text>
-          </View>
+            </TouchableOpacity>
         </View>
       </Modal>
 
