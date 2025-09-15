@@ -1286,7 +1286,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20,
     width: 140,
     minWidth: 140,
     width: 80,
@@ -1305,8 +1305,8 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 22,
-    fontWeight: '900',
-    color: 'white',
+    fontSize: showNotAWord ? 14 : 16,
+    lineHeight: showNotAWord ? 16 : 20,
   },
   skipButton: {
     width: 56,
