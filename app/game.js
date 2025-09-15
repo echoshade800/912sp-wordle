@@ -188,6 +188,7 @@ export default function GameScreen() {
   const [modalOpacity] = useState(new Animated.Value(0));
   const [modalScale] = useState(new Animated.Value(0.95));
 
+  // Game over modal states
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
@@ -195,7 +196,6 @@ export default function GameScreen() {
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
 
-  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -249,8 +249,6 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
-    setHintedPositions(new Set());
-    setHintedPositions(new Set());
     setIsFlipping(false);
     setFlippedTiles(new Set());
     
@@ -376,19 +374,7 @@ export default function GameScreen() {
 
     if (key === 'BACK') {
       setCurrentGuess(prev => {
-        // Find the last position that is not hinted
-        let newGuess = currentGuess;
-        let position = currentGuess.length - 1;
-        
-        // Skip hinted positions when backspacing
-        while (position >= 0 && hintedPositions.has(position)) {
-          position--;
-        }
-        
-        if (position >= 0) {
-          newGuess = currentGuess.slice(0, position) + currentGuess.slice(position + 1);
-          setCurrentGuess(newGuess);
-        }
+        const newGuess = prev.slice(0, -1);
         // Restore locked positions when backspacing
         const restored = newGuess.split('');
         for (let i = 0; i < 5; i++) {
@@ -592,16 +578,7 @@ export default function GameScreen() {
         await completeGame(true, finalTime);
       }
       
-      // Find next available position (skip hinted positions)
-      let position = currentGuess.length;
-      while (position < 5 && hintedPositions.has(position)) {
-        position++;
-      }
-      
-      if (position < 5) {
-        const newGuess = currentGuess.padEnd(position, ' ') + key;
-        setCurrentGuess(newGuess.slice(0, 5));
-      }
+      // Reset celebration state
       setIsCelebrating(false);
       setShowCelebrationModal(false);
       setCelebrationStep(0);
@@ -1078,6 +1055,10 @@ export default function GameScreen() {
               <Ionicons name="flame" size={72} color="#ff6b35" />
             </View>
             
+            <Text style={styles.gameOverSubtitle}>
+              Keep your streak going or your score will be reset!
+            </Text>
+            
             <View style={styles.gameOverButtons}>
               <TouchableOpacity
                 style={styles.retryButton}
@@ -1285,15 +1266,9 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   submitButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    width: 140,
-    minWidth: 140,
-    width: 80,
-    height: 40,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1305,8 +1280,8 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 22,
-    fontSize: showNotAWord ? 14 : 16,
-    lineHeight: showNotAWord ? 16 : 20,
+    fontWeight: '900',
+    color: 'white',
   },
   skipButton: {
     width: 56,
