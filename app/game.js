@@ -188,7 +188,6 @@ export default function GameScreen() {
   const [modalOpacity] = useState(new Animated.Value(0));
   const [modalScale] = useState(new Animated.Value(0.95));
 
-  // Game over modal states
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
