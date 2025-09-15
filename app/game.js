@@ -483,6 +483,10 @@ export default function GameScreen() {
       setGameStatus('lost');
       setTimeout(() => {
         showGameOverDialog();
+      // Check if this position was hinted
+      if (hintedPositions.has(colIndex)) {
+        return 'hinted';
+      }
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
