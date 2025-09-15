@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     width: 140,
-    paddingVertical: 16,
+    minWidth: 140,
     width: 80,
     height: 40,
     borderRadius: 8,
