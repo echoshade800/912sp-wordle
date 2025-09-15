@@ -197,7 +197,6 @@ export default function GameScreen() {
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   const [hintedPositions, setHintedPositions] = useState(new Set());
-  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -251,7 +250,6 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
-    setHintedPositions(new Set());
     setHintedPositions(new Set());
     setIsFlipping(false);
     setFlippedTiles(new Set());
@@ -483,10 +481,6 @@ export default function GameScreen() {
       setGameStatus('lost');
       setTimeout(() => {
         showGameOverDialog();
-      // Check if this position was hinted
-      if (hintedPositions.has(colIndex)) {
-        return 'hinted';
-      }
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
