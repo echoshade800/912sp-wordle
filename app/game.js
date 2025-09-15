@@ -927,7 +927,10 @@ export default function GameScreen() {
           onPress={handleSubmit}
           disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
         >
-          <Text style={styles.submitButtonText}>
+          <Text style={[
+            styles.submitButtonText,
+            (submitButtonState === 'checking' || submitButtonState === 'invalid') && styles.submitButtonTextSmall
+          ]}>
             {getSubmitButtonText()}
           </Text>
         </TouchableOpacity>
