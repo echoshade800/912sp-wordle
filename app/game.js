@@ -197,6 +197,7 @@ export default function GameScreen() {
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   const [hintedPositions, setHintedPositions] = useState(new Set());
+  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -250,6 +251,7 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
+    setHintedPositions(new Set());
     setHintedPositions(new Set());
     setIsFlipping(false);
     setFlippedTiles(new Set());
@@ -1020,6 +1022,7 @@ export default function GameScreen() {
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
                     size={40} 
+                    cellState === 'hinted' && styles.hintedText,
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
