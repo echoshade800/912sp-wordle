@@ -1290,9 +1290,11 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   submitButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 24,
+    minWidth: 100,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
