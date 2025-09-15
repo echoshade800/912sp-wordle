@@ -1286,7 +1286,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     width: 140,
     minWidth: 140,
     width: 80,
