@@ -195,6 +195,7 @@ export default function GameScreen() {
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [submitButtonState, setSubmitButtonState] = useState('normal');
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
