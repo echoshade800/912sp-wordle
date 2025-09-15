@@ -927,10 +927,7 @@ export default function GameScreen() {
           onPress={handleSubmit}
           disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
         >
-          <Text style={[
-            styles.submitButtonText,
-            (submitButtonState === 'checking' || submitButtonState === 'invalid') && styles.submitButtonTextSmall
-          ]}>
+          <Text style={styles.submitButtonText}>
             {getSubmitButtonText()}
           </Text>
         </TouchableOpacity>
@@ -1269,12 +1266,9 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   submitButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 24,
-    minWidth: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1288,10 +1282,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: 'white',
-    textAlign: 'center',
-  },
-  submitButtonTextSmall: {
-    fontSize: 12,
   },
   skipButton: {
     width: 56,
