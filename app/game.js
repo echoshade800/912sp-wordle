@@ -1021,7 +1021,6 @@ export default function GameScreen() {
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
                     size={40} 
-                    cellState === 'hinted' && styles.hintedText,
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
