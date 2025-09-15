@@ -1287,10 +1287,11 @@ const styles = StyleSheet.create({
   submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    width: 120,
-    minWidth: 120,
+    width: 140,
+    minWidth: 140,
     width: 80,
     height: 40,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
