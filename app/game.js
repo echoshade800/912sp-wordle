@@ -1271,7 +1271,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     paddingHorizontal: 32,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: 24,
     shadowColor: '#000',
     minWidth: 120,
@@ -1714,6 +1714,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1758,6 +1761,10 @@ const styles = StyleSheet.create({
   ruleIconText: {
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  submitButtonTextSmall: {
+    fontSize: 12,
     color: 'white',
   },
   exampleSection: {
