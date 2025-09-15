@@ -1073,12 +1073,10 @@ export default function GameScreen() {
             ]}
           >
             <Text style={styles.gameOverTitle}>ROUND OVER</Text>
-              (currentInput.length !== 5 || isSubmitting) && styles.submitButtonDisabled
+            
             <View style={styles.flameIcon}>
               <Ionicons name="flame" size={72} color="#ff6b35" />
-            disabled={currentInput.length !== 5 || isSubmitting}
-            
-            <Text style={styles.submitButtonText}>Submit</Text>
+            </View>
             
             <View style={styles.gameOverButtons}>
               <TouchableOpacity
@@ -1290,8 +1288,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 24,
-    minWidth: 100,
+    minWidth: 80,
+    width: 80,
+    height: 40,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
