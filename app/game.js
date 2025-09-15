@@ -1100,12 +1100,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 10,
+    flex: 1,
+    alignItems: 'flex-start',
   },
   levelContainer: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
-    gap: 8,
   },
   levelText: {
     fontSize: 20,
@@ -1116,9 +1116,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   coinsInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    flex: 1,
+    alignItems: 'flex-end',
   },
   coinsText: {
     fontSize: 18,
