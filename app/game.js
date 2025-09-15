@@ -1097,14 +1097,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    flex: 1,
-    alignItems: 'flex-start',
+    position: 'absolute',
+    left: 20,
+    zIndex: 1,
   },
   levelContainer: {
-    flex: 1,
     alignItems: 'center',
   },
   levelText: {
@@ -1116,8 +1116,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   coinsInfo: {
-    flex: 1,
-    alignItems: 'flex-end',
+    position: 'absolute',
+    right: 20,
+    zIndex: 1,
   },
   coinsText: {
     fontSize: 18,
