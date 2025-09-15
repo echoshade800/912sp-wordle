@@ -814,18 +814,16 @@ export default function GameScreen() {
       )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        
-        <View style={styles.centerContainer}>
+        <View style={styles.levelContainer}>
           <Text style={styles.levelText}>Level {currentLevel}</Text>
           <TouchableOpacity onPress={handleInfoPress} style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={20} color="#666" />
           </TouchableOpacity>
         </View>
-        
-        <View style={styles.coinsContainer}>
+        <View style={styles.coinsInfo}>
           <Ionicons name="star" size={20} color="#FFD700" />
           <Text style={styles.coinsText}>{coins}</Text>
         </View>
@@ -1099,21 +1097,15 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 10,
   },
-  backButton: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  centerContainer: {
-    flex: 1,
+  levelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    gap: 8,
   },
   levelText: {
     fontSize: 20,
@@ -1123,22 +1115,15 @@ const styles = StyleSheet.create({
   infoButton: {
     padding: 4,
   },
-  coinsContainer: {
-    flex: 1,
+  coinsInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     gap: 4,
   },
   coinsText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-  },
-  coinsInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
   },
   gameBoard: {
     alignItems: 'center',
@@ -1701,6 +1686,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     paddingHorizontal: 20,
     paddingVertical: 40,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
   },
   wordleExample: {
     alignItems: 'center',
