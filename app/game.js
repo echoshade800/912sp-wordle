@@ -197,7 +197,6 @@ export default function GameScreen() {
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   const [hintedPositions, setHintedPositions] = useState(new Set());
-  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
