@@ -1096,8 +1096,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     paddingTop: 10,
