@@ -196,6 +196,7 @@ export default function GameScreen() {
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
 
+  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -249,6 +250,7 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
+    setHintedPositions(new Set());
     setIsFlipping(false);
     setFlippedTiles(new Set());
     
