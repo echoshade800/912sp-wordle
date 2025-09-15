@@ -1073,14 +1073,12 @@ export default function GameScreen() {
             ]}
           >
             <Text style={styles.gameOverTitle}>ROUND OVER</Text>
-            
+              (currentInput.length !== 5 || isSubmitting) && styles.submitButtonDisabled
             <View style={styles.flameIcon}>
               <Ionicons name="flame" size={72} color="#ff6b35" />
-            </View>
+            disabled={currentInput.length !== 5 || isSubmitting}
             
-            <Text style={styles.gameOverSubtitle}>
-              Keep your streak going or your score will be reset!
-            </Text>
+            <Text style={styles.submitButtonText}>Submit</Text>
             
             <View style={styles.gameOverButtons}>
               <TouchableOpacity
