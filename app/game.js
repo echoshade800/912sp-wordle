@@ -814,14 +814,20 @@ export default function GameScreen() {
       )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <View style={styles.levelContainer}>
+        
+        <View style={styles.centerContainer}>
           <Text style={styles.levelText}>Level {currentLevel}</Text>
           <TouchableOpacity onPress={handleInfoPress} style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={20} color="#666" />
           </TouchableOpacity>
+        </View>
+        
+        <View style={styles.coinsContainer}>
+          <Ionicons name="star" size={20} color="#FFD700" />
+          <Text style={styles.coinsText}>{coins}</Text>
         </View>
         <View style={styles.coinsInfo}>
           <Ionicons name="star" size={20} color="#FFD700" />
@@ -1096,16 +1102,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     paddingTop: 10,
   },
-  levelContainer: {
+  backButton: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  centerContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 12,
   },
   levelText: {
     fontSize: 20,
@@ -1114,6 +1126,18 @@ const styles = StyleSheet.create({
   },
   infoButton: {
     padding: 4,
+  },
+  coinsContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  coinsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
   coinsInfo: {
     flexDirection: 'row',
