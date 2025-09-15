@@ -4,7 +4,7 @@
  * How to extend: Add more statistics cards, achievements, daily challenges
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,6 @@ import useGameStore from '../store/gameStore';
 
 export default function HomeScreen() {
   const [showIntro, setShowIntro] = useState(false);
-  const isMounted = useRef(false);
   const { 
     userData, 
     maxLevel, 
@@ -24,18 +23,10 @@ export default function HomeScreen() {
   } = useGameStore();
 
   useEffect(() => {
-    isMounted.current = true;
-    
     // Show onboarding if first time user
     if (!storageData || maxLevel === 1) {
-      if (isMounted.current) {
-        setShowIntro(true);
-      }
+      setShowIntro(true);
     }
-    
-    return () => {
-      isMounted.current = false;
-    };
   }, [storageData, maxLevel]);
 
   const handleInfoPress = () => {
