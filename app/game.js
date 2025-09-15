@@ -1287,8 +1287,8 @@ const styles = StyleSheet.create({
   submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 24,
-    minWidth: 80,
+    width: 120,
+    minWidth: 120,
     width: 80,
     height: 40,
     alignItems: 'center',
