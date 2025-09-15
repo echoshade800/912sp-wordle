@@ -1106,6 +1106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginLeft: 10,
   },
   levelText: {
     fontSize: 20,
