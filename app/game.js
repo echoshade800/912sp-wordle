@@ -195,7 +195,6 @@ export default function GameScreen() {
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
-  const [submitButtonState, setSubmitButtonState] = useState('normal');
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -928,10 +927,7 @@ export default function GameScreen() {
           onPress={handleSubmit}
           disabled={currentGuess.length < 5 || !isValidWord(currentGuess) || isCelebrating || isFlipping}
         >
-          <Text style={[
-            styles.submitButtonText,
-            (submitButtonState === 'checking' || submitButtonState === 'invalid') && styles.submitButtonTextSmall
-          ]}>
+          <Text style={styles.submitButtonText}>
             {getSubmitButtonText()}
           </Text>
         </TouchableOpacity>
@@ -1274,9 +1270,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 24,
     shadowColor: '#000',
-    minWidth: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1289,10 +1282,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: 'white',
-    textAlign: 'center',
-  },
-  submitButtonTextSmall: {
-    fontSize: 12,
   },
   skipButton: {
     width: 56,
