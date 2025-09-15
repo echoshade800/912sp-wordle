@@ -197,6 +197,7 @@ export default function GameScreen() {
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   const [hintedPositions, setHintedPositions] = useState(new Set());
+  const [hintedPositions, setHintedPositions] = useState(new Set());
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
     
@@ -250,6 +251,7 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
+    setHintedPositions(new Set());
     setHintedPositions(new Set());
     setIsFlipping(false);
     setFlippedTiles(new Set());
@@ -376,7 +378,19 @@ export default function GameScreen() {
 
     if (key === 'BACK') {
       setCurrentGuess(prev => {
-        const newGuess = prev.slice(0, -1);
+        // Find the last position that is not hinted
+        let newGuess = currentGuess;
+        let position = currentGuess.length - 1;
+        
+        // Skip hinted positions when backspacing
+        while (position >= 0 && hintedPositions.has(position)) {
+          position--;
+        }
+        
+        if (position >= 0) {
+          newGuess = currentGuess.slice(0, position) + currentGuess.slice(position + 1);
+          setCurrentGuess(newGuess);
+        }
         // Restore locked positions when backspacing
         const restored = newGuess.split('');
         for (let i = 0; i < 5; i++) {
@@ -580,7 +594,16 @@ export default function GameScreen() {
         await completeGame(true, finalTime);
       }
       
-      // Reset celebration state
+      // Find next available position (skip hinted positions)
+      let position = currentGuess.length;
+      while (position < 5 && hintedPositions.has(position)) {
+        position++;
+      }
+      
+      if (position < 5) {
+        const newGuess = currentGuess.padEnd(position, ' ') + key;
+        setCurrentGuess(newGuess.slice(0, 5));
+      }
       setIsCelebrating(false);
       setShowCelebrationModal(false);
       setCelebrationStep(0);
