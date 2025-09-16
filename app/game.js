@@ -160,6 +160,9 @@ export default function GameScreen() {
   const canUseDart = coins >= 10;
   const canUseHint = coins >= 20;
   const canUseSkip = coins >= 30;
+  const [pendingLevelUp, setPendingLevelUp] = useState(false);
+  const [earnedCoins, setEarnedCoins] = useState(0);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
@@ -400,6 +403,9 @@ export default function GameScreen() {
       };
     }
     return {};
+    setPendingLevelUp(false);
+    setEarnedCoins(0);
+    setShowRewardModal(false);
   };
 
   const updateKeyboardStatus = (guess, targetWord) => {
@@ -534,8 +540,19 @@ export default function GameScreen() {
         } catch {}
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
+      
+      // Calculate earned coins but don't award them yet
+      const coinsEarned = [50, 40, 30, 20, 15, 10][currentRow] || 10;
+      setEarnedCoins(coinsEarned);
+      setPendingLevelUp(true);
+      
           startCelebration();
         }, 300);
+      
+      // Show reward modal after 3 seconds
+      setTimeout(() => {
+        setShowRewardModal(true);
+      }, 3000);
       });
     } else if (currentRow >= 5) {
       setGameStatus('lost');
@@ -603,6 +620,26 @@ export default function GameScreen() {
           toValue: endX,
           duration: 1200,
           useNativeDriver: true,
+  const handleNextLevel = async () => {
+    if (!pendingLevelUp) return;
+    
+    setIsSubmitting(true);
+    setShowRewardModal(false);
+    
+    try {
+      // Complete current game and award coins
+      await completeGame(true, Date.now() - startTime, false, currentRow);
+      
+      // Initialize next level
+      initializeGame();
+    } catch (error) {
+      console.error('Error advancing to next level:', error);
+      Alert.alert('Error', 'Failed to advance to next level');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
         }),
         Animated.timing(anim.translateY, {
           toValue: height + 100,
@@ -880,6 +917,34 @@ export default function GameScreen() {
     return 'SUBMIT';
   };
 
+  const renderRewardModal = () => {
+    if (!showRewardModal) return null;
+
+    return (
+      <View style={styles.modalOverlay}>
+        <View style={styles.rewardModal}>
+          <Text style={styles.rewardTitle}>Level Complete! 🎉</Text>
+          <View style={styles.rewardContent}>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              style={styles.coinIcon}
+            />
+            <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.nextLevelButton}
+            onPress={handleNextLevel}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.nextLevelButtonText}>
+              {isSubmitting ? 'Loading...' : 'Next Level'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentBackgroundColor }]}>
       {/* Celebration Overlay */}
@@ -920,6 +985,9 @@ export default function GameScreen() {
           )}
         </View>
       )}
+
+      {/* Reward Modal */}
+      {renderRewardModal()}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -1512,6 +1580,63 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardModal: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    marginHorizontal: 40,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  rewardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rewardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  coinIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  rewardAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+  },
+  nextLevelButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+  },
+  nextLevelButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
@@ -1920,15 +2045,6 @@ const styles = StyleSheet.create({
   },
   ruleIconText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  exampleSection: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-  },
-  exampleTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
