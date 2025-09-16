@@ -522,7 +522,6 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
     if (currentGuess === targetWord && !hasSettled) {
       setTimeout(async () => {
-=======
         setGameStatus('won');
         setHasSettled(true);
         const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
@@ -533,7 +532,6 @@ export default function GameScreen() {
         try {
           await completeGame(true, finalTime, false, currentRow);
         } catch {}
->>>>>>> 5d039c3 (Enhance game mechanics: Adjusted coin rewards based on guessed row, updated hint costs, and integrated haptic feedback for user interactions. Reset game state on level change for improved user experience.)
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
           startCelebration();
