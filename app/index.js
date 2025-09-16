@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Image } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
@@ -92,7 +92,10 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.coinsInfo}>
-          <Ionicons name="star" size={20} color="#FFD700" />
+          <Image 
+            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+            style={{ width: 20, height: 20 }}
+          />
           <Text style={styles.coinsText}>{coins}</Text>
         </View>
       </View>
