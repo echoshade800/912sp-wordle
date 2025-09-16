@@ -550,7 +550,7 @@ export default function GameScreen() {
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-      await completeGame(true, Date.now() - startTime, true); // skipCoins = true
+       completeGame(false, Date.now() - startTime); // Game lost, no coins
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
