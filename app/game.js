@@ -953,6 +953,7 @@ export default function GameScreen() {
             style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
             disabled={coins < 10 || isCelebrating || isFlipping}
+          >
             <View style={styles.boosterIconContainer}>
               <Image 
                 source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k4w7geqsrcw37csh4bvm7_1758003955_img_1-1.webp' }}
@@ -971,7 +972,13 @@ export default function GameScreen() {
             onPress={() => handleBooster('hint')}
             disabled={coins < 15 || isCelebrating || isFlipping}
           >
-            <Ionicons name="target" size={20} color="white" />
+            <View style={styles.boosterIconContainer}>
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k571heq8t6b7hvbq1675k_1758003976_img_1.webp' }}
+                style={[styles.boosterIconImage, { opacity: canUseHint ? 1 : 0.3 }]}
+                resizeMode="contain"
+              />
+            </View>
             <View style={styles.boosterPriceContainer}>
               <Ionicons name="star" size={10} color="#FFD700" />
               <Text style={styles.boosterPriceText}>15</Text>
@@ -994,7 +1001,13 @@ export default function GameScreen() {
           onPress={() => handleBooster('skip')}
           disabled={coins < 25 || isCelebrating || isFlipping}
         >
-          <Ionicons name="play-forward" size={20} color="white" />
+          <View style={styles.boosterIconContainer}>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k8tbbedsbyjxbgd17dn3d_1758004089_img_0.webp' }}
+              style={[styles.boosterIconImage, { opacity: canUseSkip ? 1 : 0.3 }]}
+              resizeMode="contain"
+            />
+          </View>
           <View style={styles.boosterPriceContainer}>
             <Ionicons name="star" size={10} color="#FFD700" />
             <Text style={styles.boosterPriceText}>25</Text>
@@ -1111,19 +1124,7 @@ export default function GameScreen() {
             <View style={styles.flameIcon}>
               <Ionicons name="flame" size={72} color="#ff6b35" />
             </View>
-            <View style={styles.boosterIconContainer}>
-              <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k571heq8t6b7hvbq1675k_1758003976_img_1.webp' }}
-                style={[styles.boosterIconImage, { opacity: canUseHint ? 1 : 0.3 }]}
-                resizeMode="contain"
-              />
-            <View style={styles.boosterIconContainer}>
-              <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k8tbbedsbyjxbgd17dn3d_1758004089_img_0.webp' }}
-                style={[styles.boosterIconImage, { opacity: canUseSkip ? 1 : 0.3 }]}
-                resizeMode="contain"
-              />
-            </View>
+            
             <Text style={styles.gameOverSubtitle}>
               Keep your streak going or your score will be reset!
             </Text>
@@ -1342,10 +1343,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
-  boosterIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
+  boosterIconContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  boosterIconImage: {
+    width: 28,
+    height: 28,
   },
   submitButton: {
     width: 140,
