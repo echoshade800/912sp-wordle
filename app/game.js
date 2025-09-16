@@ -1073,7 +1073,7 @@ export default function GameScreen() {
                 <View style={styles.boosterModalHeader}>
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
-                    size={40} 
+                    source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
