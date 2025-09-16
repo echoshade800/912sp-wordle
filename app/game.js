@@ -1890,4 +1890,17 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  hintTile: {
+    borderWidth: 2,
+    borderColor: '#ffd60a',
+  },
+  hintText: {
+    position: 'absolute',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffd60a',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
 });
