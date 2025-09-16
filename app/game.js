@@ -540,7 +540,7 @@ export default function GameScreen() {
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-        showGameOverDialog();
+      await completeGame(true, Date.now() - startTime, true); // skipCoins = true
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
