@@ -197,9 +197,6 @@ export default function GameScreen() {
   const prevLevelRef = useRef(currentLevel);
   const [hasSettled, setHasSettled] = useState(false);
   const [rewardCoins, setRewardCoins] = useState(0);
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const [earnedCoins, setEarnedCoins] = useState(0);
-  const [pendingLevelUp, setPendingLevelUp] = useState(false);
 
   // Booster modal states
   const [showBoosterModal, setShowBoosterModal] = useState(false);
@@ -527,26 +524,23 @@ export default function GameScreen() {
       setTimeout(async () => {
         setGameStatus('won');
         setHasSettled(true);
-        
-        // 计算奖励coins但不立即完成游戏
-        // 只设置胜利状态，不立即完成游戏
-        setGameStatus('won');
-        setHasSettled(true);
-        
-        // 计算奖励但不发放
-        const reward = [50, 40, 30, 20, 15, 10][Math.min(currentRow, 5)];
-        setEarnedCoins(reward);
-        setPendingLevelUp(true);
-        
-        // 1.5秒后显示奖励弹框
+        const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
+        const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
+        setRewardCoins(coinsDelta);
+        const endTime = Date.now();
+        const finalTime = endTime - startTime;
+        try {
+          await completeGame(true, finalTime, false, currentRow);
+        } catch {}
+        // Delay celebration to allow color change to be visible
         setTimeout(() => {
-          setShowRewardModal(true);
-        }, 1500);
-      }, 500);
+          startCelebration();
+        }, 300);
+      });
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-        completeGame(false, Date.now() - startTime); // Lost game
+      await completeGame(true, Date.now() - startTime, true); // skipCoins = true
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
@@ -637,82 +631,60 @@ export default function GameScreen() {
     });
   };
 
-  const startNewGame = () => {
-    const newWord = getRandomWord();
-    setTargetWord(newWord);
-    setGuesses(Array(6).fill(''));
-    setCurrentGuess('');
-    setCurrentRow(0);
-    setKeyboardStatus({});
-    setHintUsed(false);
-    setHintPosition(-1);
-    setGhostHints([]);
-    ghostFlipMapRef.current = new Map();
-    setLockedPositions(new Set());
-    setDisabledKeys(new Set());
-    setShowRewardModal(false);
-    setEarnedCoins(0);
-    setPendingLevelUp(false);
-    setGameStatus('playing');
-    setHasSettled(false);
-    setRewardCoins(0);
-    
-    // 设置新关卡的背景色
-    const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
-    setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
-    
-    // Start game session for the new level
-    startGame(currentLevel);
-    
-    // Reset celebration state
-    setIsCelebrating(false);
-    setShowCelebrationModal(false);
-    setCelebrationStep(0);
-    flipAnimations.forEach(anim => anim.setValue(0));
-    greatTextScale.setValue(0.8);
-    
-    // Reset flip animations
-    flipRowAnimations.forEach(rowAnims => {
-      rowAnims.forEach(anim => anim.setValue(0));
-    });
-    setFlippedTiles(new Set());
-    setCurrentGuess('');
-  };
-
   const handleNextLevel = async () => {
-    if (pendingLevelUp) {
-      // 现在才真正完成游戏并进入下一关
-      await completeGame(true, Date.now() - startTime, false, currentRow);
-      
-      // 重置所有状态
-      setShowRewardModal(false);
-      setShowCelebration(false);
-      setShowConfetti(false);
-      setEarnedCoins(0);
-      setPendingLevelUp(false);
-      
-      // 开始新游戏
-      startNewGame();
-    }
-  };
-
-  const handleRetry = () => {
-    // Reset game state but keep keyboard colors
-    setGuesses(Array(6).fill(''));
-    setCurrentGuess('');
-    setCurrentRow(0);
-    setGameStatus('playing');
-    setIsFlipping(false);
-    setFlippedTiles(new Set());
-    setGhostHints([]);
-    ghostFlipMapRef.current = new Map();
-    setHasSettled(false);
-    setRewardCoins(0);
+    setIsSubmitting(true);
     
-    // Reset flip animations
-    flipRowAnimations.forEach(rowAnims => {
-      rowAnims.forEach(anim => anim.setValue(0));
-    });
+    try {
+      // Simulate API call - replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
+      
+      // Reset celebration state
+      setIsCelebrating(false);
+      setShowCelebrationModal(false);
+      setCelebrationStep(0);
+      flipAnimations.forEach(anim => anim.setValue(0));
+      greatTextScale.setValue(0.8);
+      
+      // Start new game
+      const newWord = getRandomWord();
+      setTargetWord(newWord);
+      setGuesses(Array(6).fill(''));
+      setCurrentGuess('');
+      setCurrentRow(0);
+      setGameStatus('playing');
+      setKeyboardStatus({});
+      setHintUsed(false);
+      setHintPosition(-1);
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
+      
+      // 设置新关卡的背景色
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
+      
+      // Reset booster states for new level
+      setLockedPositions(new Set());
+      setDisabledKeys(new Set());
+      
+    } catch (error) {
+      Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBooster = async (type) => {
@@ -1124,28 +1096,6 @@ export default function GameScreen() {
           </View>
         </TouchableOpacity>
       </View>
-
-      {/* 奖励弹框 */}
-      {showRewardModal && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.rewardModal}>
-            <Text style={styles.rewardTitle}>Level Complete!</Text>
-            <View style={styles.rewardContent}>
-              <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
-                style={styles.rewardCoinIcon}
-              />
-              <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.nextButton}
-              onPress={handleNextLevel}
-            >
-              <Text style={styles.nextButtonText}>Next Level</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       {/* Celebration Modal */}
       <Modal
@@ -1567,53 +1517,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  rewardModal: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 10,
-    minWidth: 280,
-  },
-  rewardTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-  },
-  rewardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  rewardCoinIcon: {
-    width: 32,
-    height: 32,
-    marginRight: 10,
-  },
-  rewardAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#6aaa64',
-  },
-  nextButton: {
-    backgroundColor: '#6aaa64',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   celebrationModal: {
     backgroundColor: 'white',
     borderRadius: 20,
@@ -1659,6 +1562,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginTop: 8,
+  },
+  nextButton: {
+    backgroundColor: '#6aaa64',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nextButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
   disabledButton: {
     opacity: 0.6,
