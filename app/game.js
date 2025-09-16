@@ -364,13 +364,6 @@ export default function GameScreen() {
     // Ghost hint flip animation (per tile)
     const key = `${rowIndex}-${colIndex}`;
     const ghostAnim = ghostFlipMapRef.current.get(key);
-    if (ghostAnim) {
-      return {
-        transform: [{
-          rotateX: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] })
-        }]
-      };
-    }
     return {};
   };
 
@@ -748,14 +741,6 @@ export default function GameScreen() {
         // Haptic feedback
         try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
 
-        // Trigger small flip animation on that cell
-        const key = `${currentRow}-${col}`;
-        const anim = new Animated.Value(0);
-        ghostFlipMapRef.current.set(key, anim);
-        Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
-          // Remove anim after finish to avoid persisting transform
-          ghostFlipMapRef.current.delete(key);
-        });
         break;
       }
         
