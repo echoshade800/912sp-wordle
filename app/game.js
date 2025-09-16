@@ -969,7 +969,10 @@ export default function GameScreen() {
               />
             </View>
             <View style={styles.boosterPriceContainer}>
-              <Ionicons name="star" size={10} color="#FFD700" />
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                style={{ width: 10, height: 10 }}
+              />
               <Text style={styles.boosterPriceText}>10</Text>
             </View>
           </TouchableOpacity>
@@ -987,7 +990,10 @@ export default function GameScreen() {
               />
             </View>
             <View style={styles.boosterPriceContainer}>
-              <Ionicons name="star" size={10} color="#FFD700" />
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                style={{ width: 10, height: 10 }}
+              />
               <Text style={styles.boosterPriceText}>15</Text>
             </View>
           </TouchableOpacity>
@@ -1016,7 +1022,10 @@ export default function GameScreen() {
             />
           </View>
           <View style={styles.boosterPriceContainer}>
-            <Ionicons name="star" size={10} color="#FFD700" />
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              style={{ width: 10, height: 10 }}
+            />
             <Text style={styles.boosterPriceText}>25</Text>
           </View>
         </TouchableOpacity>
