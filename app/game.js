@@ -529,17 +529,16 @@ export default function GameScreen() {
         setHasSettled(true);
         
         // 计算奖励coins但不立即完成游戏
-        const attemptIndex = currentRow; // 0-based index
-        const coinRewards = [50, 40, 30, 20, 15, 10];
-        const reward = coinRewards[Math.max(0, Math.min(5, attemptIndex))] || 0;
+        // 只设置胜利状态，不立即完成游戏
+        setGameStatus('won');
+        setHasSettled(true);
+        
+        // 计算奖励但不发放
+        const reward = [50, 40, 30, 20, 15, 10][Math.min(currentRow, 5)];
         setEarnedCoins(reward);
         setPendingLevelUp(true);
         
-        // 显示庆祝动画
-        setShowCelebration(true);
-        setShowConfetti(true);
-        
-        // 延迟显示奖励弹框
+        // 1.5秒后显示奖励弹框
         setTimeout(() => {
           setShowRewardModal(true);
         }, 1500);
