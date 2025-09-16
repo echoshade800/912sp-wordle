@@ -1010,7 +1010,7 @@ export default function GameScreen() {
         >
           <View style={styles.boosterIconContainer}>
             <Image 
-              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/ca63e670-5f0d-471c-b3f3-e1a2d8e35cfb.png' }}
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58rq967fvn8qpk556rabq6p_1758009760_img_0.webp' }}
               style={[styles.boosterIconImage, { opacity: canUseSkip ? 1 : 0.3 }]}
               resizeMode={'contain'}
             />
