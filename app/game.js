@@ -656,32 +656,6 @@ export default function GameScreen() {
     });
   };
 
-  const handleNextLevel = async () => {
-    setIsSubmitting(true);
-    
-    try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const endTime = Date.now();
-      const finalTime = endTime - startTime;
-      
-      // Check if this was a skipped game (no coin reward)
-      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
-      
-      if (isSkipped) {
-        // Skip: advance level but no coins
-        await completeGame(false, finalTime);
-      } else {
-        // Normal win: advance level and award coins
-        await completeGame(true, finalTime);
-      }
-      
-      // Reset celebration state
-      setIsCelebrating(false);
-      setShowCelebrationModal(false);
-      setCelebrationStep(0);
-      flipAnimations.forEach(anim => anim.setValue(0));
       greatTextScale.setValue(0.8);
       
       // Start new game
