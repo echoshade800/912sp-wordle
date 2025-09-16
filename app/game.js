@@ -153,7 +153,7 @@ const KEYBOARD_LAYOUT = [
 ];
 
 export default function GameScreen() {
-  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame, updateGameData } = useGameStore();
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
   const [currentGuess, setCurrentGuess] = useState('');
@@ -255,32 +255,11 @@ export default function GameScreen() {
     setCurrentGuess('');
     setCurrentRow(0);
     setGameStatus('playing');
-                borderRadius: piece.size / 2,
     setIsFlipping(false);
     setFlippedTiles(new Set());
-        y: piece.y + piece.vy + piece.gravity,
+    
     // Reset flip animations
-        vy: piece.vy + piece.gravity // 使用个别重力值
-        
-        {/* 添加额外的星形礼花 */}
-        {confetti.slice(0, 20).map(piece => (
-          <Animated.View
-            key={`star-${piece.id}`}
-            style={[
-              styles.starConfetti,
-              {
-                left: piece.x + 50,
-                top: piece.y - 30,
-                transform: [
-                  { rotate: `${piece.rotation * 2}deg` },
-                  { scale: piece.size / 10 }
-                ]
-              }
-            ]}
-          >
-            <Text style={styles.starText}>⭐</Text>
-          </Animated.View>
-        ))}
+    flipRowAnimations.forEach(rowAnims => 
       rowAnims.forEach(anim => anim.setValue(0))
     );
   };
@@ -422,18 +401,17 @@ export default function GameScreen() {
         }
         return restored.join('');
       });
-    for (let i = 0; i < 80; i++) {
+    } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
       setCurrentGuess(prev => {
         if (lockedPositions.has(prev.length)) {
-        x: Math.random() * (screenWidth + 200) - 100, // 扩展到屏幕外侧
-        y: -50 - Math.random() * 100, // 从更高位置开始
-        vx: (Math.random() - 0.5) * 8, // 增加水平速度范围
-        vy: Math.random() * 4 + 3, // 增加垂直速度
+          // Skip locked position
+          const newGuess = prev + targetWord[prev.length];
+          if (newGuess.length < 5 && !lockedPositions.has(newGuess.length)) {
+            return newGuess + key;
           }
-        rotationSpeed: (Math.random() - 0.5) * 15, // 增加旋转速度
-        color: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#FF7675', '#74B9FF', '#00B894', '#FDCB6E'][Math.floor(Math.random() * 10)],
-        size: Math.random() * 12 + 6, // 增加礼花大小
-        gravity: 0.15 + Math.random() * 0.1 // 添加重力变化
+          return newGuess;
+        }
+        return prev + key;
       });
     }
   };
@@ -496,7 +474,7 @@ export default function GameScreen() {
 
     // Game logic processing (guesses and keyboard already updated in submitGuess)
 
-      setTimeout(async () => {
+    if (currentGuess === targetWord) {
       setGameStatus('won');
       // Delay celebration to allow color change to be visible
       setTimeout(() => {
@@ -504,8 +482,29 @@ export default function GameScreen() {
       }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
-      setTimeout(() => {
-        showGameOverDialog();
+      // Skip to next level without awarding coins
+      setTimeout(async () => {
+        const { currentGame, gameHistory, maxLevel } = useGameStore.getState();
+        if (!currentGame) return;
+        
+        const skippedGame = {
+          ...currentGame,
+          isComplete: true,
+          isWon: false, // Mark as not won to avoid coin rewards
+          isSkipped: true, // Add flag to indicate this was skipped
+          completionTime: Date.now() - currentGame.startTime,
+          score: 0 // No score for skipped games
+        };
+        
+        const newHistory = [skippedGame, ...gameHistory].slice(0, 50);
+        const updates = { 
+          gameHistory: newHistory, 
+          currentGame: null,
+          currentLevel: currentGame.level + 1,
+          maxLevel: Math.max(maxLevel, currentGame.level)
+        };
+        
+        await updateGameData(updates);
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
