@@ -259,9 +259,9 @@ export default function GameScreen() {
     setFlippedTiles(new Set());
     
     // Reset flip animations
-    flipRowAnimations.forEach(rowAnims => {
-      rowAnims.forEach(anim => anim.setValue(0));
-    });
+    flipRowAnimations.forEach(rowAnims => 
+      rowAnims.forEach(anim => anim.setValue(0))
+    );
   };
 
   const handleNoThanks = () => {
@@ -471,12 +471,13 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
     if (currentGuess === targetWord) {
       setTimeout(async () => {
-        setGameStatus('won');
-        // Delay celebration to allow color change to be visible
-        setTimeout(() => {
-          startCelebration();
-        }, 300);
-      });
+      }
+      )
+      setGameStatus('won');
+      // Delay celebration to allow color change to be visible
+      setTimeout(() => {
+        startCelebration();
+      }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
@@ -1397,6 +1398,23 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  starConfetti: {
+    position: 'absolute',
+  },
+  starText: {
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   modalOverlay: {
     flex: 1,
