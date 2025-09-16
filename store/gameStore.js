@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import StorageUtils from '../utils/StorageUtils';
-import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
 
 const useGameStore = create((set, get) => ({
   // User data
@@ -10,28 +8,10 @@ const useGameStore = create((set, get) => ({
   
   // Settings
   settings: {
-    hapticsEnabled: true, // 默认开启震动反馈
+    hapticsEnabled: true,
   },
 
-  // 设置震动开关
-  setHapticsEnabled: (enabled) => {
-    set((state) => ({ 
-      settings: { ...state.settings, hapticsEnabled: !!enabled } 
-    }));
-  },
-
-  // 触发轻微震动
-  triggerHapticFeedback: () => {
-    const { settings } = get();
-    if (settings.hapticsEnabled && Platform.OS !== 'web') {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch (error) {
-        // 静默失败，不影响游戏逻辑
-        console.warn('Haptic feedback failed:', error);
-      }
-    }
-  },
+  setHapticsEnabled: (enabled) => set((state) => ({ settings: { ...state.settings, hapticsEnabled: !!enabled } })),
   
   // Game state
   currentLevel: 1,
