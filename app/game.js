@@ -198,7 +198,6 @@ export default function GameScreen() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
-  const [hintPositions, setHintPositions] = useState(new Set());
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -1889,18 +1888,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
-  },
-  hintTile: {
-    borderWidth: 2,
-    borderColor: '#ffd60a',
-  },
-  hintText: {
-    position: 'absolute',
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffd60a',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
 });
