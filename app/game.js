@@ -197,9 +197,6 @@ export default function GameScreen() {
   const prevLevelRef = useRef(currentLevel);
   const [hasSettled, setHasSettled] = useState(false);
   const [rewardCoins, setRewardCoins] = useState(0);
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const [earnedCoins, setEarnedCoins] = useState(0);
-  const [pendingLevelUp, setPendingLevelUp] = useState(false);
 
   // Booster modal states
   const [showBoosterModal, setShowBoosterModal] = useState(false);
@@ -527,14 +524,7 @@ export default function GameScreen() {
       setTimeout(async () => {
         setGameStatus('won');
         setHasSettled(true);
-        
-        // Calculate earned coins but don't complete game yet
-        const attemptIndex = currentRow; // 0-based index
-        const coinMap = [50, 40, 30, 20, 15, 10];
-        const coinsEarned = coinMap[Math.max(0, Math.min(5, attemptIndex))] || 0;
-        setEarnedCoins(coinsEarned);
-        setPendingLevelUp(true);
-        
+        const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
         const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
         setRewardCoins(coinsDelta);
         const endTime = Date.now();
@@ -550,26 +540,11 @@ export default function GameScreen() {
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-       completeGame(false, Date.now() - startTime); // Game lost, no coins
+      await completeGame(true, Date.now() - startTime, true); // skipCoins = true
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
       setCurrentGuess('');
-    }
-  };
-
-  const handleNextLevel = async () => {
-    if (pendingLevelUp) {
-      // Now actually complete the game and advance to next level
-      await completeGame(true, Date.now() - startTime, false, currentRow);
-      
-      // Reset all states for new game
-      setShowRewardModal(false);
-      setPendingLevelUp(false);
-      setEarnedCoins(0);
-      
-      // Start new game
-      startNewGame();
     }
   };
 
@@ -656,21 +631,32 @@ export default function GameScreen() {
     });
   };
 
-  const startNewGame = () => {
+  const handleNextLevel = async () => {
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
-      setIsCelebrating(false);
-      setCelebrationStep(0);
-      setShowCelebrationModal(false);
+      // Simulate API call - replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Reset flip animations
+      const endTime = Date.now();
+      const finalTime = endTime - startTime;
+      
+      // Check if this was a skipped game (no coin reward)
+      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
+      
+      if (isSkipped) {
+        // Skip: advance level but no coins
+        await completeGame(false, finalTime);
+      } else {
+        // Normal win: advance level and award coins
+        await completeGame(true, finalTime);
+      }
+      
+      // Reset celebration state
+      setIsCelebrating(false);
+      setShowCelebrationModal(false);
+      setCelebrationStep(0);
       flipAnimations.forEach(anim => anim.setValue(0));
-      confettiAnimations.forEach(anim => {
-        anim.translateY.setValue(-100);
-        anim.translateX.setValue(0);
-        anim.opacity.setValue(1);
-        anim.rotate.setValue(0);
-      });
       greatTextScale.setValue(0.8);
       
       // Start new game
@@ -894,33 +880,6 @@ export default function GameScreen() {
     return 'SUBMIT';
   };
 
-  const startNewGame2 = () => {
-    const newWord = getRandomWord();
-    setTargetWord(newWord);
-    setGuesses(Array(6).fill(''));
-    setCurrentGuess('');
-    setCurrentRow(0);
-    setGameStatus('playing');
-    setKeyboardStatus({});
-    setHintUsed(false);
-    setHintPosition(-1);
-    setGhostHints([]);
-    ghostFlipMapRef.current = new Map();
-    setLockedPositions(new Set());
-    setDisabledKeys(new Set());
-    setHasSettled(false);
-    setRewardCoins(0);
-    
-    // Reset flip animations
-    flipRowAnimations.forEach(rowAnims => {
-      rowAnims.forEach(anim => anim.setValue(0));
-    });
-    
-    // Set background color for current level
-    const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
-    setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentBackgroundColor }]}>
       {/* Celebration Overlay */}
@@ -1138,28 +1097,6 @@ export default function GameScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Reward Modal */}
-      {showRewardModal && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.rewardModal}>
-            <Text style={styles.rewardTitle}>Level Complete!</Text>
-            <View style={styles.coinReward}>
-              <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
-                style={styles.coinIcon}
-              />
-              <Text style={styles.coinAmount}>+{earnedCoins}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.nextButton}
-              onPress={handleNextLevel}
-            >
-              <Text style={styles.nextButtonText}>Next Level</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
       {/* Celebration Modal */}
       <Modal
         visible={showCelebrationModal}
@@ -1211,7 +1148,7 @@ export default function GameScreen() {
                 <View style={styles.boosterModalHeader}>
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
-                    size={32}
+                    source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
@@ -1575,55 +1512,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
-  },
-  rewardModal: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    minWidth: 250,
-  },
-  rewardTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-  },
-  coinReward: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 25,
-    backgroundColor: '#f0f8ff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 15,
-  },
-  coinIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-  },
-  coinAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#6aaa64',
   },
   celebrationModal: {
     backgroundColor: 'white',
@@ -1673,14 +1565,22 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: '#6aaa64',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   nextButtonText: {
-    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
   },
   disabledButton: {
     opacity: 0.6,
