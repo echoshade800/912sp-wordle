@@ -875,7 +875,7 @@ export default function GameScreen() {
         <View style={styles.coinsInfo}>
           <Image 
             source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
-            style={{ width: 32, height: 32 }}
+            style={{ width: 40, height: 40 }}
           />
           <Text style={styles.coinsText}>{coins}</Text>
         </View>
