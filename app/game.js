@@ -160,6 +160,9 @@ export default function GameScreen() {
   const canUseDart = coins >= 10;
   const canUseHint = coins >= 20;
   const canUseSkip = coins >= 30;
+  const [pendingLevelUp, setPendingLevelUp] = useState(false);
+  const [earnedCoins, setEarnedCoins] = useState(0);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
@@ -402,6 +405,12 @@ export default function GameScreen() {
     return {};
   };
 
+  const initializeGame = () => {
+    setPendingLevelUp(false);
+    setEarnedCoins(0);
+    setShowRewardModal(false);
+  };
+
   const updateKeyboardStatus = (guess, targetWord) => {
     const newStatus = { ...keyboardStatus };
     
@@ -534,13 +543,24 @@ export default function GameScreen() {
         } catch {}
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
+      
+      // Calculate earned coins but don't award them yet
+      const coinsEarned = [50, 40, 30, 20, 15, 10][currentRow] || 10;
+      setEarnedCoins(coinsEarned);
+      setPendingLevelUp(true);
+      
           startCelebration();
         }, 300);
+      
+      // Show reward modal after 3 seconds
+      setTimeout(() => {
+        setShowRewardModal(true);
+      }, 3000);
       });
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
-      await completeGame(true, Date.now() - startTime, true); // skipCoins = true
+       completeGame(false, Date.now() - startTime); // Game lost, no coins awarded
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
@@ -632,6 +652,26 @@ export default function GameScreen() {
   };
 
   const handleNextLevel = async () => {
+    if (!pendingLevelUp) return;
+    
+    setIsSubmitting(true);
+    setShowRewardModal(false);
+    
+    try {
+      // Complete current game and award coins
+      await completeGame(true, Date.now() - startTime, false, currentRow);
+      
+      // Initialize next level
+      initializeGame();
+    } catch (error) {
+      console.error('Error advancing to next level:', error);
+      Alert.alert('Error', 'Failed to advance to next level');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNextLevel2 = async () => {
     setIsSubmitting(true);
     
     try {
@@ -880,6 +920,34 @@ export default function GameScreen() {
     return 'SUBMIT';
   };
 
+  const renderRewardModal = () => {
+    if (!showRewardModal) return null;
+
+    return (
+      <View style={styles.modalOverlay}>
+        <View style={styles.rewardModal}>
+          <Text style={styles.rewardTitle}>Level Complete! 🎉</Text>
+          <View style={styles.rewardContent}>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              style={styles.coinIcon}
+            />
+            <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.nextLevelButton}
+            onPress={handleNextLevel}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.nextLevelButtonText}>
+              {isSubmitting ? 'Loading...' : 'Next Level'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentBackgroundColor }]}>
       {/* Celebration Overlay */}
@@ -920,6 +988,9 @@ export default function GameScreen() {
           )}
         </View>
       )}
+
+      {/* Reward Modal */}
+      {renderRewardModal()}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -1116,7 +1187,7 @@ export default function GameScreen() {
             
             <TouchableOpacity
               style={[styles.nextButton, isSubmitting && styles.disabledButton]}
-              onPress={handleNextLevel}
+              onPress={handleNextLevel2}
               disabled={isSubmitting}
             >
               <Text style={styles.nextButtonText}>
@@ -1148,7 +1219,7 @@ export default function GameScreen() {
                 <View style={styles.boosterModalHeader}>
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
-                    source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                    size={32}
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
@@ -1512,10 +1583,62 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  rewardModal: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    marginHorizontal: 40,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  rewardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rewardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  coinIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  rewardAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+  },
+  nextLevelButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+  },
+  nextLevelButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   celebrationModal: {
     backgroundColor: 'white',
