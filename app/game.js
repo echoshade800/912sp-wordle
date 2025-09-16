@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal } from 'react-native';
+import { Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -953,7 +954,10 @@ export default function GameScreen() {
             onPress={() => handleBooster('dart')}
             disabled={coins < 10 || isCelebrating || isFlipping}
           >
-            <Ionicons name="search" size={20} color="white" />
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k4w7geqsrcw37csh4bvm7_1758003955_img_1-1.webp' }}
+              style={[styles.boosterIcon, { opacity: coins < 10 ? 0.3 : 1 }]}
+            />
             <View style={styles.boosterPriceContainer}>
               <Ionicons name="star" size={10} color="#FFD700" />
               <Text style={styles.boosterPriceText}>10</Text>
@@ -1323,6 +1327,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     color: 'white',
+  },
+  boosterIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   submitButton: {
     width: 140,
