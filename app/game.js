@@ -1012,7 +1012,7 @@ export default function GameScreen() {
             <Image 
               source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/ca63e670-5f0d-471c-b3f3-e1a2d8e35cfb.png' }}
               style={[styles.boosterIconImage, { opacity: canUseSkip ? 1 : 0.3 }]}
-              resizeMode="contain"
+              resizeMode={'contain'}
             />
           </View>
           <View style={styles.boosterPriceContainer}>
