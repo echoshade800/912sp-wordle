@@ -656,6 +656,21 @@ export default function GameScreen() {
     });
   };
 
+  const startNewGame = () => {
+    try {
+      setIsSubmitting(true);
+      setIsCelebrating(false);
+      setCelebrationStep(0);
+      setShowCelebrationModal(false);
+      
+      // Reset flip animations
+      flipAnimations.forEach(anim => anim.setValue(0));
+      confettiAnimations.forEach(anim => {
+        anim.translateY.setValue(-100);
+        anim.translateX.setValue(0);
+        anim.opacity.setValue(1);
+        anim.rotate.setValue(0);
+      });
       greatTextScale.setValue(0.8);
       
       // Start new game
@@ -879,7 +894,7 @@ export default function GameScreen() {
     return 'SUBMIT';
   };
 
-  const startNewGame = () => {
+  const startNewGame2 = () => {
     const newWord = getRandomWord();
     setTargetWord(newWord);
     setGuesses(Array(6).fill(''));
@@ -1196,7 +1211,7 @@ export default function GameScreen() {
                 <View style={styles.boosterModalHeader}>
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
-                    source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                    size={32}
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
