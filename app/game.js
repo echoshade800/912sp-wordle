@@ -535,7 +535,6 @@ export default function GameScreen() {
         setEarnedCoins(coinsEarned);
         setPendingLevelUp(true);
         
-        const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
         const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
         setRewardCoins(coinsDelta);
         const endTime = Date.now();
