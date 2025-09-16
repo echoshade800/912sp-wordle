@@ -952,7 +952,7 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
-            disabled={coins < 10 || isCelebrating || isFlipping}
+            disabled={coins < 10 || isCelebrating || isFlipping}>
           >
             <View style={styles.boosterIconContainer}>
               <Image 
