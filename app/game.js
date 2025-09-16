@@ -476,7 +476,9 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
     if (currentGuess === targetWord) {
       setTimeout(async () => {
-        setGameStatus('won');
+      }
+      )
+      setTimeout(async () => {
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
           startCelebration();
