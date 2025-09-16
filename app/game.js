@@ -5,11 +5,12 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal, Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
+import * as Haptics from 'expo-haptics';
 
 const GameRulesModal = ({ visible, onClose }) => {
   return (
@@ -152,12 +153,13 @@ const KEYBOARD_LAYOUT = [
 ];
 
 export default function GameScreen() {
-  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame, settings } = useGameStore();
+  const WIN_REWARD = [50, 40, 30, 20, 15, 10];
   
   // Define booster availability
   const canUseDart = coins >= 10;
-  const canUseHint = coins >= 15;
-  const canUseSkip = coins >= 25;
+  const canUseHint = coins >= 20;
+  const canUseSkip = coins >= 30;
   
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
@@ -169,7 +171,7 @@ export default function GameScreen() {
   const [hintUsed, setHintUsed] = useState(false);
   const [hintPosition, setHintPosition] = useState(-1); // deprecated for ghost hints
   const [ghostHints, setGhostHints] = useState([]); // { row, col, letter }
-  const HINT_COST = 15;
+  const HINT_COST = 20;
   const [lastHintAt, setLastHintAt] = useState(0);
   const ghostFlipMapRef = useRef(new Map()); // key: `${row}-${col}` -> Animated.Value
   const gameStarted = useRef(false);
@@ -192,6 +194,9 @@ export default function GameScreen() {
   const [flippedTiles, setFlippedTiles] = useState(new Set());
   const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
   const [submitStatus, setSubmitStatus] = useState('idle'); // 'idle' | 'checking' | 'not_word'
+  const prevLevelRef = useRef(currentLevel);
+  const [hasSettled, setHasSettled] = useState(false);
+  const [rewardCoins, setRewardCoins] = useState(0);
 
   // Booster modal states
   const [showBoosterModal, setShowBoosterModal] = useState(false);
@@ -262,6 +267,10 @@ export default function GameScreen() {
     setGameStatus('playing');
     setIsFlipping(false);
     setFlippedTiles(new Set());
+    setGhostHints([]);
+    ghostFlipMapRef.current = new Map();
+    setHasSettled(false);
+    setRewardCoins(0);
     
     // Reset flip animations
     flipRowAnimations.forEach(rowAnims => {
@@ -291,8 +300,38 @@ export default function GameScreen() {
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
       setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
       gameStarted.current = true;
+      // reset ghost hints for a fresh board
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
+      setHasSettled(false);
+      setRewardCoins(0);
     }
   }, [currentLevel, startGame]);
+
+  // When currentLevel changes (after a win), start a fresh board automatically
+  useEffect(() => {
+    if (prevLevelRef.current !== currentLevel && !showCelebrationModal) {
+      // New level: reset everything for a fresh round
+      const newWord = getRandomWord();
+      setTargetWord(newWord);
+      setGuesses(Array(6).fill(''));
+      setCurrentGuess('');
+      setCurrentRow(0);
+      setGameStatus('playing');
+      setKeyboardStatus({});
+      setHintUsed(false);
+      setHintPosition(-1);
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
+      setLockedPositions(new Set());
+      setDisabledKeys(new Set());
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
+      // Start game session for the new level
+      startGame(currentLevel);
+      prevLevelRef.current = currentLevel;
+    }
+  }, [currentLevel, startGame, showCelebrationModal]);
 
   useEffect(() => {
     if (gameStatus !== 'playing') {
@@ -360,17 +399,6 @@ export default function GameScreen() {
         }]
       };
     }
-
-    // Ghost hint flip animation (per tile)
-    const key = `${rowIndex}-${colIndex}`;
-    const ghostAnim = ghostFlipMapRef.current.get(key);
-    if (ghostAnim) {
-      return {
-        transform: [{
-          rotateX: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] })
-        }]
-      };
-    }
     return {};
   };
 
@@ -395,6 +423,7 @@ export default function GameScreen() {
     if (gameStatus !== 'playing' || isCelebrating || isFlipping || disabledKeys.has(key)) return;
 
     if (key === 'BACK') {
+      const canDelete = currentGuess.length > 0;
       setCurrentGuess(prev => {
         const newGuess = prev.slice(0, -1);
         // Restore locked positions when backspacing
@@ -406,14 +435,24 @@ export default function GameScreen() {
         }
         return restored.join('');
       });
-    } else {
+      if (canDelete && settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
+    } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
       setCurrentGuess(prev => {
         if (lockedPositions.has(prev.length)) {
           // Skip locked position
-          return prev + targetWord[prev.length] + key;
+          const newGuess = prev + targetWord[prev.length];
+          if (newGuess.length < 5 && !lockedPositions.has(newGuess.length)) {
+            return newGuess + key;
+          }
+          return newGuess;
         }
-        return prev.length < 5 ? prev + key : prev;
+        return prev + key;
       });
+      if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
     }
   };
 
@@ -426,6 +465,9 @@ export default function GameScreen() {
     if (currentGuess.length !== 5 || !isValidWord(currentGuess) || isFlipping) return;
 
     // Start flip animation
+    if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    }
     setIsFlipping(true);
     setFlippedTiles(new Set()); // Reset flipped tiles
     
@@ -446,6 +488,10 @@ export default function GameScreen() {
     
     // Start each flip animation individually to control color timing
     flipSequence.forEach((animation, index) => {
+      // Haptic at the moment each tile starts flipping
+      if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
       animation.start(({ finished }) => {
         if (finished) {
           // Mark this tile as flipped so it can show its color
@@ -474,11 +520,24 @@ export default function GameScreen() {
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
     // Game logic processing (guesses and keyboard already updated in submitGuess)
-    if (currentGuess === targetWord) {
+    if (currentGuess === targetWord && !hasSettled) {
       setTimeout(async () => {
+<<<<<<< HEAD
       }
       )
       setTimeout(async () => {
+=======
+        setGameStatus('won');
+        setHasSettled(true);
+        const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
+        const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
+        setRewardCoins(coinsDelta);
+        const endTime = Date.now();
+        const finalTime = endTime - startTime;
+        try {
+          await completeGame(true, finalTime, false, currentRow);
+        } catch {}
+>>>>>>> 5d039c3 (Enhance game mechanics: Adjusted coin rewards based on guessed row, updated hint costs, and integrated haptic feedback for user interactions. Reset game state on level change for improved user experience.)
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
           startCelebration();
@@ -616,6 +675,8 @@ export default function GameScreen() {
       setKeyboardStatus({});
       setHintUsed(false);
       setHintPosition(-1);
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
       
       // 设置新关卡的背景色
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
@@ -671,14 +732,14 @@ export default function GameScreen() {
         };
       case 'hint':
         return {
-          cost: 15,
+          cost: 20,
           title: 'Use Hint?',
           description: 'Reveal and lock one correct letter position.',
           icon: 'target'
         };
       case 'skip':
         return {
-          cost: 25,
+          cost: 30,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -747,15 +808,17 @@ export default function GameScreen() {
         // Keyboard: mark letter as present (green priority)
         setKeyboardStatus(prev => ({ ...prev, [ghost.letter]: 'correct' }));
 
-        // Haptic feedback
-        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+        // Haptic feedback for hint (optional per current strategy)
+        if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+        }
 
-        // Trigger small flip animation on that cell
+        // Trigger small scale+fade animation on that cell (no rotation)
         const key = `${currentRow}-${col}`;
         const anim = new Animated.Value(0);
         ghostFlipMapRef.current.set(key, anim);
         Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
-          // Remove anim after finish to avoid persisting transform
+          // Keep at 1; remove reference so no style is applied unless ghost visible
           ghostFlipMapRef.current.delete(key);
         });
         break;
@@ -892,6 +955,8 @@ export default function GameScreen() {
                 : guess[colIndex] || '';
               // Ghost hint for current row when no user value
               const ghost = ghostHints.find(h => h.row === rowIndex && h.col === colIndex);
+              const ghostKey = `${rowIndex}-${colIndex}`;
+              const ghostAnim = ghostFlipMapRef.current.get(ghostKey);
               
               return (
                 <Animated.View
@@ -902,7 +967,13 @@ export default function GameScreen() {
                     ghost && rowIndex === currentRow && !letter
                       ? styles.ghostTile
                       : { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
-                    getTileStyle(rowIndex, colIndex)
+                    getTileStyle(rowIndex, colIndex),
+                    ghost && rowIndex === currentRow && !letter && ghostAnim
+                      ? {
+                          opacity: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }),
+                          transform: [{ scale: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }]
+                        }
+                      : null
                   ]}
                 >
                   <Text style={[styles.tileText, ghost && rowIndex === currentRow && !letter ? styles.ghostLetter : null]}>
@@ -962,7 +1033,6 @@ export default function GameScreen() {
             style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
             disabled={coins < 10 || isCelebrating || isFlipping}>
-          >
             <View style={styles.boosterIconContainer}>
               <Image 
                 source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k4w7geqsrcw37csh4bvm7_1758003955_img_1-1.webp' }}
@@ -996,7 +1066,7 @@ export default function GameScreen() {
                 source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
                 style={{ width: 10, height: 10 }}
               />
-              <Text style={styles.boosterPriceText}>15</Text>
+              <Text style={styles.boosterPriceText}>20</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -1019,7 +1089,7 @@ export default function GameScreen() {
           <View style={styles.boosterIconContainer}>
             <Image 
               source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58rq967fvn8qpk556rabq6p_1758009760_img_0.webp' }}
-              style={[styles.boosterIconImage, { opacity: canUseSkip ? 1 : 0.3 }]}
+              style={[styles.boosterIconImage, { width: 84, height: 84 }, { opacity: canUseSkip ? 1 : 0.3 }]}
               resizeMode={'contain'}
             />
           </View>
@@ -1028,7 +1098,7 @@ export default function GameScreen() {
               source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
               style={{ width: 10, height: 10 }}
             />
-            <Text style={styles.boosterPriceText}>25</Text>
+            <Text style={styles.boosterPriceText}>30</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -1047,7 +1117,7 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+20 Coins</Text>
+              <Text style={styles.rewardText}>+{rewardCoins} Coins</Text>
             </View>
             
             <TouchableOpacity
