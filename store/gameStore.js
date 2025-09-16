@@ -92,7 +92,7 @@ const useGameStore = create((set, get) => ({
   },
   
   // Complete current game
-  completeGame: async (won, finalTime) => {
+  completeGame: async (won, finalTime, skipCoins = false) => {
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) return;
     
@@ -111,11 +111,15 @@ const useGameStore = create((set, get) => ({
     };
     
     // Update records if this is a winning game
-    if (won) {
+    if (won && !skipCoins) {
       updates.maxLevel = Math.max(maxLevel, currentGame.level);
       updates.maxScore = Math.max(maxScore, completedGame.score);
       updates.maxTime = maxTime === 0 ? finalTime : Math.min(maxTime, finalTime);
       updates.coins = coins + (completedGame.score >= 50 ? 20 : 10);
+      updates.currentLevel = currentGame.level + 1;
+    } else if (won && skipCoins) {
+      // Skip case: advance level but don't award coins
+      updates.maxLevel = Math.max(maxLevel, currentGame.level);
       updates.currentLevel = currentGame.level + 1;
     }
     
