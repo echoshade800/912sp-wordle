@@ -60,11 +60,11 @@ export default function HomeScreen() {
             <View style={styles.rule}>
               <View style={[styles.tileExample, { backgroundColor: '#c9b458' }]} />
               <Text style={styles.ruleText}>Yellow: Correct letter, wrong position</Text>
-            </View>
+            <Text style={styles.ruleText}>Yellow: Correct letter, wrong position</Text>
             <View style={styles.rule}>
               <View style={[styles.tileExample, { backgroundColor: '#787c7e' }]} />
               <Text style={styles.ruleText}>Gray: Letter not in word</Text>
-            </View>
+            <Text style={styles.ruleText}>Gray: Letter not in word</Text>
           </View>
           <TouchableOpacity 
             style={styles.startButton}
