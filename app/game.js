@@ -853,7 +853,7 @@ export default function GameScreen() {
                         })}
                       ],
                       opacity: anim.opacity
-                  source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                    }
                   ]}
                 />
               ))}
