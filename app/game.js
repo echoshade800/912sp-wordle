@@ -153,7 +153,7 @@ const KEYBOARD_LAYOUT = [
 ];
 
 export default function GameScreen() {
-  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame, updateGameData } = useGameStore();
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
   const [currentGuess, setCurrentGuess] = useState('');
@@ -401,17 +401,13 @@ export default function GameScreen() {
         }
         return restored.join('');
       });
-    } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
+    } else {
       setCurrentGuess(prev => {
         if (lockedPositions.has(prev.length)) {
           // Skip locked position
-          const newGuess = prev + targetWord[prev.length];
-          if (newGuess.length < 5 && !lockedPositions.has(newGuess.length)) {
-            return newGuess + key;
-          }
-          return newGuess;
+          return prev + targetWord[prev.length] + key;
         }
-        return prev + key;
+        return prev.length < 5 ? prev + key : prev;
       });
     }
   };
@@ -473,8 +469,8 @@ export default function GameScreen() {
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
     // Game logic processing (guesses and keyboard already updated in submitGuess)
-
     if (currentGuess === targetWord) {
+      setTimeout(async () => {
       setGameStatus('won');
       // Delay celebration to allow color change to be visible
       setTimeout(() => {
@@ -482,29 +478,8 @@ export default function GameScreen() {
       }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
-      // Skip to next level without awarding coins
-      setTimeout(async () => {
-        const { currentGame, gameHistory, maxLevel } = useGameStore.getState();
-        if (!currentGame) return;
-        
-        const skippedGame = {
-          ...currentGame,
-          isComplete: true,
-          isWon: false, // Mark as not won to avoid coin rewards
-          isSkipped: true, // Add flag to indicate this was skipped
-          completionTime: Date.now() - currentGame.startTime,
-          score: 0 // No score for skipped games
-        };
-        
-        const newHistory = [skippedGame, ...gameHistory].slice(0, 50);
-        const updates = { 
-          gameHistory: newHistory, 
-          currentGame: null,
-          currentLevel: currentGame.level + 1,
-          maxLevel: Math.max(maxLevel, currentGame.level)
-        };
-        
-        await updateGameData(updates);
+      setTimeout(() => {
+        showGameOverDialog();
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
@@ -1421,6 +1396,23 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  starConfetti: {
+    position: 'absolute',
+  },
+  starText: {
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   modalOverlay: {
     flex: 1,
