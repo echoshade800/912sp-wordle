@@ -153,7 +153,7 @@ const KEYBOARD_LAYOUT = [
 ];
 
 export default function GameScreen() {
-  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame, updateGameData } = useGameStore();
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
   const [currentGuess, setCurrentGuess] = useState('');
@@ -482,29 +482,8 @@ export default function GameScreen() {
       }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
-      // Skip to next level without awarding coins
-      setTimeout(async () => {
-        const { currentGame, gameHistory, maxLevel } = useGameStore.getState();
-        if (!currentGame) return;
-        
-        const skippedGame = {
-          ...currentGame,
-          isComplete: true,
-          isWon: false, // Mark as not won to avoid coin rewards
-          isSkipped: true, // Add flag to indicate this was skipped
-          completionTime: Date.now() - currentGame.startTime,
-          score: 0 // No score for skipped games
-        };
-        
-        const newHistory = [skippedGame, ...gameHistory].slice(0, 50);
-        const updates = { 
-          gameHistory: newHistory, 
-          currentGame: null,
-          currentLevel: currentGame.level + 1,
-          maxLevel: Math.max(maxLevel, currentGame.level)
-        };
-        
-        await updateGameData(updates);
+      setTimeout(() => {
+        showGameOverDialog();
       }, 1000);
     } else {
       setCurrentRow(currentRow + 1);
