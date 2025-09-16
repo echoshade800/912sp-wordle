@@ -1159,7 +1159,30 @@ export default function GameScreen() {
             <View style={styles.gameOverButtons}>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={
-                }
-  )
-}
+             onPress={handleRetry}
+           >
+             <Text style={styles.retryButtonText}>
+               Retry (35 coins)
+             </Text>
+           </TouchableOpacity>
+           
+           <TouchableOpacity
+             style={styles.noThanksButton}
+             onPress={handleNoThanks}
+           >
+             <Text style={styles.noThanksButtonText}>
+               No Thanks
+             </Text>
+           </TouchableOpacity>
+         </View>
+       </View>
+     </Animated.View>
+   </View>
+ </Modal>
+
+ {/* Rules Modal */}
+ <GameRulesModal 
+   visible={showRulesModal} 
+   onClose={() => setShowRulesModal(false)} 
+ />
+</SafeAreaView>
