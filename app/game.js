@@ -155,6 +155,12 @@ const KEYBOARD_LAYOUT = [
 
 export default function GameScreen() {
   const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
+  
+  // Define booster availability
+  const canUseDart = coins >= 10;
+  const canUseHint = coins >= 15;
+  const canUseSkip = coins >= 25;
+  
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
   const [currentGuess, setCurrentGuess] = useState('');
