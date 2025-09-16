@@ -364,6 +364,13 @@ export default function GameScreen() {
     // Ghost hint flip animation (per tile)
     const key = `${rowIndex}-${colIndex}`;
     const ghostAnim = ghostFlipMapRef.current.get(key);
+    if (ghostAnim) {
+      return {
+        transform: [{
+          rotateX: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] })
+        }]
+      };
+    }
     return {};
   };
 
@@ -741,6 +748,14 @@ export default function GameScreen() {
         // Haptic feedback
         try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
 
+        // Trigger small flip animation on that cell
+        const key = `${currentRow}-${col}`;
+        const anim = new Animated.Value(0);
+        ghostFlipMapRef.current.set(key, anim);
+        Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
+          // Remove anim after finish to avoid persisting transform
+          ghostFlipMapRef.current.delete(key);
+        });
         break;
       }
         
@@ -1035,33 +1050,7 @@ export default function GameScreen() {
             
             <TouchableOpacity
               style={[styles.nextButton, isSubmitting && styles.disabledButton]}
-              onPress={handleRetry}
-            >
-              <Text style={styles.retryButtonText}>
-                Retry (35 coins)
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.noThanksButton}
-              onPress={handleNoThanks}
-            >
-              <Text style={styles.noThanksButtonText}>
-                No Thanks
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </View>
-    </Modal>
-
-    {/* Rules Modal */}
-    <GameRulesModal 
-      visible={showRulesModal} 
-      onClose={() => setShowRulesModal(false)} 
-    />
-  </SafeAreaView>
-);
+              onPress={handleNextLevel}
               disabled={isSubmitting}
             >
               <Text style={styles.nextButtonText}>
@@ -1159,30 +1148,774 @@ export default function GameScreen() {
             <View style={styles.gameOverButtons}>
               <TouchableOpacity
                 style={styles.retryButton}
-             onPress={handleRetry}
-           >
-             <Text style={styles.retryButtonText}>
-               Retry (35 coins)
-             </Text>
-           </TouchableOpacity>
-           
-           <TouchableOpacity
-             style={styles.noThanksButton}
-             onPress={handleNoThanks}
-           >
-             <Text style={styles.noThanksButtonText}>
-               No Thanks
-             </Text>
-           </TouchableOpacity>
-         </View>
-       </View>
-     </Animated.View>
-   </View>
- </Modal>
+                onPress={handleRetry}
+              >
+                <View style={styles.retryButtonContent}>
+                  <Ionicons name="star" size={20} color="white" />
+                  <Text style={styles.retryButtonText}>35</Text>
+                  <Text style={styles.retryButtonLabel}>Retry</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.noThanksButton}
+                onPress={handleNoThanks}
+              >
+                <Text style={styles.noThanksButtonText}>No Thanks</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+      
+      {/* Game Rules Modal */}
+      <GameRulesModal 
+        visible={showRulesModal} 
+        onClose={() => setShowRulesModal(false)} 
+      />
+    </SafeAreaView>
+  );
+}
 
- {/* Rules Modal */}
- <GameRulesModal 
-   visible={showRulesModal} 
-   onClose={() => setShowRulesModal(false)} 
- />
-</SafeAreaView>
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingTop: 10,
+  },
+  levelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  levelText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  infoButton: {
+    padding: 4,
+  },
+  coinsInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  coinsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  gameBoard: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  tile: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'transparent',
+  },
+  ghostTile: {
+    backgroundColor: 'rgba(106, 170, 100, 0.7)',
+  },
+  tileText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  ghostLetter: {
+    color: '#ffffff',
+    opacity: 0.9,
+  },
+  keyboard: {
+    paddingHorizontal: 4,
+    marginTop: -2,
+  },
+  keyboardRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 8,
+    gap: 4,
+  },
+  key: {
+    minWidth: 32,
+    height: 52,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  backKey: {
+    minWidth: 52,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  backKeyText: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#374151',
+  },
+  keyText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#374151',
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 0,
+    paddingBottom: 20,
+    marginTop: 16,
+    transform: [{ translateY: -2 }],
+  },
+  boostersRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  circularBooster: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#f97316',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  boosterPriceContainer: {
+    position: 'absolute',
+    bottom: -8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    gap: 2,
+  },
+  boosterPriceText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  boosterIconContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  boosterIconImage: {
+    width: 68,
+    height: 68,
+    marginTop: 4,
+  },
+  submitButton: {
+    width: 140,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#6aaa64',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'center',
+    paddingHorizontal: 0,
+    transform: [{ translateY: -4 }],
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 18, // will shrink automatically when needed
+    fontWeight: '700',
+  },
+  skipButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  disabledBooster: {
+    opacity: 0.5,
+  },
+  disabledKey: {
+    opacity: 0.5,
+  },
+  celebrationOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    pointerEvents: 'none',
+  },
+  greatTextContainer: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  greatText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'white',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  confetti: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  celebrationModal: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '80%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  ribbonContainer: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  ribbonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  rewardContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  rewardText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+  },
+  nextButton: {
+    backgroundColor: '#6aaa64',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nextButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  boosterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  boosterModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  boosterModalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  boosterModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  boosterModalDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  boosterModalCost: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  boosterModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  boosterCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  boosterCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  boosterConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  boosterConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  gameOverModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  gameOverModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  gameOverTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  gameOverSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  gameOverAnswer: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  gameOverButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  retryButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  retryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  retryButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  noThanksButton: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  noThanksButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  flameIcon: {
+    marginBottom: 16,
+  },
+  rulesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  rulesModal: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  rulesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  rulesTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  rulesContent: {
+    padding: 20,
+  },
+  rulesText: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rulesExamples: {
+    marginBottom: 20,
+  },
+  ruleExample: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  exampleTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  exampleTileText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  ruleText: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+    lineHeight: 20,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  rulesFooter: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  newRulesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  wordleExample: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  wordleLetters: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  wordleLetter: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wordleLetterText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  howToPlayCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  howToPlayTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  ruleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  ruleNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    width: 32,
+    textAlign: 'center',
+  },
+  ruleIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ruleIconText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  exampleSection: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+  },
+  exampleTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  exampleLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  labelContainer: {
+    alignItems: 'center',
+  },
+  labelText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  labelArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#666',
+  },
+  exampleTiles: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  bottomLabel: {
+    alignItems: 'center',
+  },
+  bottomLabelArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#666',
+    marginBottom: 4,
+  },
+  bottomLabelText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+});
