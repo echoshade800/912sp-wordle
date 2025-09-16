@@ -430,35 +430,36 @@ export default function GameScreen() {
 
     if (key === 'BACK') {
       const canDelete = currentGuess.length > 0;
-      setCurrentGuess(prev => {
-        const newGuess = prev.slice(0, -1);
-        // Restore locked positions when backspacing
-        const restored = newGuess.split('');
-        for (let i = 0; i < 5; i++) {
-          if (lockedPositions.has(i) && i < restored.length) {
-            restored[i] = targetWord[i];
-          }
-        }
-        return restored.join('');
-      });
-      if (canDelete && settings?.hapticsEnabled && Platform.OS !== 'web') {
-        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-      }
-    } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
-      setCurrentGuess(prev => {
-        if (lockedPositions.has(prev.length)) {
-          // Skip locked position
-          const newGuess = prev + targetWord[prev.length];
-          if (newGuess.length < 5 && !lockedPositions.has(newGuess.length)) {
-            return newGuess + key;
-          }
-          return newGuess;
+        }).start();
         }
         return prev + key;
       });
       if (settings?.hapticsEnabled && Platform.OS !== 'web') {
         try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
       }
+    }
+  };
+
+  const handleNextLevel = async () => {
+    if (!pendingLevelUp) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // 正式完成游戏并发放coins
+      await completeGame(true, Date.now() - startTime, false, currentRow);
+      
+      // 重置状态并进入下一关
+      setPendingLevelUp(false);
+      setShowRewardModal(false);
+      setEarnedCoins(0);
+      
+      // 初始化下一关游戏
+      initializeGame();
+    } catch (error) {
+      console.error('Failed to advance to next level:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
