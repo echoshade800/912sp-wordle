@@ -198,7 +198,6 @@ export default function GameScreen() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [gameOverOpacity] = useState(new Animated.Value(0));
   const [gameOverScale] = useState(new Animated.Value(0.95));
-  const [hintPositions, setHintPositions] = useState(new Set());
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -276,6 +275,7 @@ export default function GameScreen() {
 
   // Booster states
   const [lockedPositions, setLockedPositions] = useState(new Set());
+  const [disabledKeys, setDisabledKeys] = useState(new Set());
 
   useEffect(() => {
     if (!gameStarted.current) {
