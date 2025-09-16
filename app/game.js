@@ -522,10 +522,6 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
     if (currentGuess === targetWord && !hasSettled) {
       setTimeout(async () => {
-<<<<<<< HEAD
-      }
-      )
-      setTimeout(async () => {
 =======
         setGameStatus('won');
         setHasSettled(true);
