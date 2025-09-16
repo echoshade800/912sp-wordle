@@ -1357,8 +1357,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   boosterIconImage: {
-    width: 28,
-    height: 28,
+    width: 40,
+    height: 40,
   },
   submitButton: {
     width: 140,
