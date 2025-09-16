@@ -471,12 +471,11 @@ export default function GameScreen() {
     // Game logic processing (guesses and keyboard already updated in submitGuess)
     if (currentGuess === targetWord) {
       setTimeout(async () => {
-        setGameStatus('won');
-        // Delay celebration to allow color change to be visible
-        setTimeout(() => {
-          startCelebration();
-        }, 300);
-      }, 100);
+      setGameStatus('won');
+      // Delay celebration to allow color change to be visible
+      setTimeout(() => {
+        startCelebration();
+      }, 300);
     } else if (currentRow >= 5) {
       setGameStatus('lost');
       setTimeout(() => {
