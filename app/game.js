@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
@@ -161,7 +162,11 @@ export default function GameScreen() {
   const [keyboardStatus, setKeyboardStatus] = useState({});
   const [startTime] = useState(Date.now());
   const [hintUsed, setHintUsed] = useState(false);
-  const [hintPosition, setHintPosition] = useState(-1);
+  const [hintPosition, setHintPosition] = useState(-1); // deprecated for ghost hints
+  const [ghostHints, setGhostHints] = useState([]); // { row, col, letter }
+  const HINT_COST = 15;
+  const [lastHintAt, setLastHintAt] = useState(0);
+  const ghostFlipMapRef = useRef(new Map()); // key: `${row}-${col}` -> Animated.Value
   const gameStarted = useRef(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
@@ -181,6 +186,7 @@ export default function GameScreen() {
   ));
   const [flippedTiles, setFlippedTiles] = useState(new Set());
   const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
+  const [submitStatus, setSubmitStatus] = useState('idle'); // 'idle' | 'checking' | 'not_word'
 
   // Booster modal states
   const [showBoosterModal, setShowBoosterModal] = useState(false);
@@ -346,6 +352,17 @@ export default function GameScreen() {
             inputRange: [0, 0.5, 1],
             outputRange: ['0deg', '90deg', '0deg']
           })
+        }]
+      };
+    }
+
+    // Ghost hint flip animation (per tile)
+    const key = `${rowIndex}-${colIndex}`;
+    const ghostAnim = ghostFlipMapRef.current.get(key);
+    if (ghostAnim) {
+      return {
+        transform: [{
+          rotateX: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] })
         }]
       };
     }
@@ -687,28 +704,58 @@ export default function GameScreen() {
         }
         break;
         
-      case 'hint':
-        // Find available positions that aren't locked yet
-        const availablePositions = [];
-        for (let i = 0; i < 5; i++) {
-          if (!lockedPositions.has(i)) {
-            availablePositions.push(i);
+      case 'hint': {
+        // Debounce 200ms
+        const now = Date.now();
+        if (now - lastHintAt < 200) break;
+        setLastHintAt(now);
+
+        // Compute columns already confirmed green from previous rows
+        const confirmedGreen = new Set();
+        for (let r = 0; r < currentRow; r++) {
+          const g = guesses[r];
+          for (let c = 0; c < 5; c++) {
+            if (g && g[c] === targetWord[c]) confirmedGreen.add(c);
           }
         }
-        
-        if (availablePositions.length > 0) {
-          const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
-          setLockedPositions(prev => new Set([...prev, randomPos]));
-          
-          // Update current guess with the hint
-          setCurrentGuess(prev => {
-            const newGuess = prev.split('');
-            while (newGuess.length < 5) newGuess.push('');
-            newGuess[randomPos] = targetWord[randomPos];
-            return newGuess.join('');
-          });
+
+        // Exclude columns already ghosted in current row, and columns already correct in current input
+        const ghostedCols = new Set(ghostHints.filter(h => h.row === currentRow).map(h => h.col));
+        const candidateCols = [];
+        for (let c = 0; c < 5; c++) {
+          if (confirmedGreen.has(c)) continue;
+          if (ghostedCols.has(c)) continue;
+          if ((currentGuess[c] || '') === targetWord[c]) continue; // already typed correct
+          candidateCols.push(c);
         }
+
+        if (candidateCols.length === 0) {
+          // No available hint
+          // Lightweight toast replacement
+          Alert.alert('No available hint', 'All positions are already known.');
+          break;
+        }
+
+        const col = candidateCols[Math.floor(Math.random() * candidateCols.length)];
+        const ghost = { row: currentRow, col, letter: targetWord[col] };
+        setGhostHints(prev => [...prev, ghost]);
+
+        // Keyboard: mark letter as present (green priority)
+        setKeyboardStatus(prev => ({ ...prev, [ghost.letter]: 'correct' }));
+
+        // Haptic feedback
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+
+        // Trigger small flip animation on that cell
+        const key = `${currentRow}-${col}`;
+        const anim = new Animated.Value(0);
+        ghostFlipMapRef.current.set(key, anim);
+        Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
+          // Remove anim after finish to avoid persisting transform
+          ghostFlipMapRef.current.delete(key);
+        });
         break;
+      }
         
       case 'skip':
         // Complete current game as skipped
@@ -836,17 +883,24 @@ export default function GameScreen() {
               const letter = rowIndex === currentRow && gameStatus === 'playing' 
                 ? currentGuess[colIndex] || ''
                 : guess[colIndex] || '';
+              // Ghost hint for current row when no user value
+              const ghost = ghostHints.find(h => h.row === rowIndex && h.col === colIndex);
               
               return (
                 <Animated.View
                   key={colIndex}
                   style={[
                     styles.tile,
-                    { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
+                    // If ghost visible (no user letter), render semi-transparent green
+                    ghost && rowIndex === currentRow && !letter
+                      ? styles.ghostTile
+                      : { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
                     getTileStyle(rowIndex, colIndex)
                   ]}
                 >
-                  <Text style={styles.tileText}>{letter}</Text>
+                  <Text style={[styles.tileText, ghost && rowIndex === currentRow && !letter ? styles.ghostLetter : null]}>
+                    {letter || (ghost && rowIndex === currentRow ? ghost.letter : '')}
+                  </Text>
                 </Animated.View>
               );
             })}
@@ -1144,10 +1198,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.9)',
     backgroundColor: 'transparent',
   },
+  ghostTile: {
+    backgroundColor: 'rgba(106, 170, 100, 0.7)',
+  },
   tileText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#374151',
+  },
+  ghostLetter: {
+    color: '#ffffff',
+    opacity: 0.9,
   },
   keyboard: {
     paddingHorizontal: 4,
@@ -1224,6 +1285,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexShrink: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1266,22 +1328,23 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   submitButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 140,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#6aaa64',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'center',
+    paddingHorizontal: 0,
+    transform: [{ translateY: -4 }],
   },
   submitButtonText: {
-    fontSize: 22,
-    fontWeight: '900',
     color: 'white',
+    fontSize: 18, // will shrink automatically when needed
+    fontWeight: '700',
   },
   skipButton: {
     width: 56,
@@ -1291,6 +1354,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexShrink: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

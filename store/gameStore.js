@@ -6,6 +6,13 @@ const useGameStore = create((set, get) => ({
   userData: null,
   storageData: null,
   
+  // Settings
+  settings: {
+    hapticsEnabled: true,
+  },
+
+  setHapticsEnabled: (enabled) => set((state) => ({ settings: { ...state.settings, hapticsEnabled: !!enabled } })),
+  
   // Game state
   currentLevel: 1,
   coins: 100,
@@ -55,7 +62,7 @@ const useGameStore = create((set, get) => ({
     // Update state
     set(updates);
     
-    // Persist to storage
+    // Persist to storage (settings not persisted yet by design)
     try {
       await StorageUtils.setData({
         maxLevel: newData.maxLevel,
