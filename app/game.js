@@ -1134,3 +1134,6 @@ export default function GameScreen() {
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={
+                }
+  )
+}
