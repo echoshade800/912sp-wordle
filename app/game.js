@@ -5,11 +5,13 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Dimensions, Animated, Modal, Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
+import * as Haptics from 'expo-haptics';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const GameRulesModal = ({ visible, onClose }) => {
   return (
@@ -87,41 +89,11 @@ const GameRulesModal = ({ visible, onClose }) => {
         </View>
 
         <View style={styles.exampleSection}>
-          <Text style={styles.exampleTitle}>EXAMPLE:</Text>
-          
-          <View style={styles.exampleLabels}>
-            <View style={styles.labelContainer}>
-              <Text style={styles.labelText}>Letter in{'\n'}correct{'\n'}spot</Text>
-              <View style={styles.labelArrow} />
-            </View>
-            <View style={styles.labelContainer}>
-              <Text style={styles.labelText}>Letter in{'\n'}the wrong{'\n'}spot</Text>
-              <View style={styles.labelArrow} />
-            </View>
-          </View>
-          
-          <View style={styles.exampleTiles}>
-            <View style={[styles.exampleTile, { backgroundColor: '#8bc34a' }]}>
-              <Text style={styles.exampleTileText}>S</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
-              <Text style={styles.exampleTileText}>C</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
-              <Text style={styles.exampleTileText}>O</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
-              <Text style={styles.exampleTileText}>R</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
-              <Text style={styles.exampleTileText}>E</Text>
-            </View>
-          </View>
-          
-          <View style={styles.bottomLabel}>
-            <View style={styles.bottomLabelArrow} />
-            <Text style={styles.bottomLabelText}>Letter not{'\n'}in word</Text>
-          </View>
+          <Image 
+            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k5b68m0tfwar0zgke24dqkd7_1758091132_img_0.webp' }}
+            style={styles.exampleImage}
+            resizeMode="contain"
+          />
         </View>
       </View>
     </Modal>
@@ -152,27 +124,41 @@ const KEYBOARD_LAYOUT = [
 ];
 
 export default function GameScreen() {
-  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame } = useGameStore();
+  const { currentLevel, coins, startGame, completeGame, useBooster, currentGame, settings } = useGameStore();
+  const WIN_REWARD = [50, 40, 30, 20, 15, 10];
+  
+  // Define booster availability
+  const canUseDart = coins >= 10;
+  const canUseHint = coins >= 20;
+  const canUseSkip = coins >= 30;
+  const [pendingLevelUp, setPendingLevelUp] = useState(false);
+  const [earnedCoins, setEarnedCoins] = useState(0);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState(Array(6).fill(''));
   const [currentGuess, setCurrentGuess] = useState('');
   const [currentRow, setCurrentRow] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
+  
+  // 调试日志已删除
   const [keyboardStatus, setKeyboardStatus] = useState({});
   const [startTime] = useState(Date.now());
   const [hintUsed, setHintUsed] = useState(false);
-  const [hintPosition, setHintPosition] = useState(-1);
+  const [hintPosition, setHintPosition] = useState(-1); // deprecated for ghost hints
+  const [ghostHints, setGhostHints] = useState([]); // { row, col, letter }
+  const HINT_COST = 20;
+  const [lastHintAt, setLastHintAt] = useState(0);
+  const ghostFlipMapRef = useRef(new Map()); // key: `${row}-${col}` -> Animated.Value
   const gameStarted = useRef(false);
+  // 礼花炮引用
+  const leftCannonRef = useRef(null);
+  const rightCannonRef = useRef(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
-  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: confetti, 3: modal
+  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: new celebration, 3: modal
   const [flipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
-  const [confettiAnimations] = useState(Array.from({ length: 20 }, () => ({
-    translateY: new Animated.Value(-100),
-    translateX: new Animated.Value(0),
-    opacity: new Animated.Value(1),
-    rotate: new Animated.Value(0)
-  })));
+  // 旧的confetti动画已删除，使用新的react-native-confetti-cannon
   const [greatTextScale] = useState(new Animated.Value(0.8));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -181,6 +167,10 @@ export default function GameScreen() {
   ));
   const [flippedTiles, setFlippedTiles] = useState(new Set());
   const [currentBackgroundColor, setCurrentBackgroundColor] = useState('#fafafa');
+  const [submitStatus, setSubmitStatus] = useState('idle'); // 'idle' | 'checking' | 'not_word'
+  const prevLevelRef = useRef(currentLevel);
+  const [hasSettled, setHasSettled] = useState(false);
+  const [rewardCoins, setRewardCoins] = useState(0);
 
   // Booster modal states
   const [showBoosterModal, setShowBoosterModal] = useState(false);
@@ -195,6 +185,7 @@ export default function GameScreen() {
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [isSkippedGame, setIsSkippedGame] = useState(false);
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -251,11 +242,15 @@ export default function GameScreen() {
     setGameStatus('playing');
     setIsFlipping(false);
     setFlippedTiles(new Set());
+    setGhostHints([]);
+    ghostFlipMapRef.current = new Map();
+    setHasSettled(false);
+    setRewardCoins(0);
     
     // Reset flip animations
-    flipRowAnimations.forEach(rowAnims => 
-      rowAnims.forEach(anim => anim.setValue(0))
-    );
+    flipRowAnimations.forEach(rowAnims => {
+      rowAnims.forEach(anim => anim.setValue(0));
+    });
   };
 
   const handleNoThanks = () => {
@@ -280,15 +275,50 @@ export default function GameScreen() {
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
       setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
       gameStarted.current = true;
+      // reset ghost hints for a fresh board
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
+      setHasSettled(false);
+      setRewardCoins(0);
     }
   }, [currentLevel, startGame]);
 
+  // When currentLevel changes (after a win), start a fresh board automatically
   useEffect(() => {
-    if (gameStatus !== 'playing') {
+    if (prevLevelRef.current !== currentLevel && !showCelebrationModal) {
+      // New level: reset everything for a fresh round
+      const newWord = getRandomWord();
+      setTargetWord(newWord);
+      setGuesses(Array(6).fill(''));
+      setCurrentGuess('');
+      setCurrentRow(0);
+      setGameStatus('playing');
+      setKeyboardStatus({});
+      setHintUsed(false);
+      setHintPosition(-1);
+      setGhostHints([]);
+      ghostFlipMapRef.current = new Map();
+      setLockedPositions(new Set());
+      setDisabledKeys(new Set());
+      setIsSkippedGame(false); // Reset skip state for new level
+      setHasSettled(false); // Reset victory detection state for new level
+      setRewardCoins(0); // Reset reward coins for new level
+      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
+      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
+      // Start game session for the new level
+      startGame(currentLevel);
+      prevLevelRef.current = currentLevel;
+    }
+  }, [currentLevel, startGame, showCelebrationModal]);
+
+  useEffect(() => {
+    // 只有失败时才自动完成游戏，胜利时等待用户点击Next按钮
+    if (gameStatus === 'lost') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      completeGame(gameStatus === 'won', finalTime);
+      completeGame(false, finalTime);
     }
+    // 胜利时不自动调用 completeGame，等待用户点击奖励弹框中的Next按钮
   }, [gameStatus, startTime, completeGame]);
 
   const getTileColor = (letter, position, rowIndex) => {
@@ -352,6 +382,12 @@ export default function GameScreen() {
     return {};
   };
 
+  const initializeGame = () => {
+    setPendingLevelUp(false);
+    setEarnedCoins(0);
+    setShowRewardModal(false);
+  };
+
   const updateKeyboardStatus = (guess, targetWord) => {
     const newStatus = { ...keyboardStatus };
     
@@ -373,6 +409,7 @@ export default function GameScreen() {
     if (gameStatus !== 'playing' || isCelebrating || isFlipping || disabledKeys.has(key)) return;
 
     if (key === 'BACK') {
+      const canDelete = currentGuess.length > 0;
       setCurrentGuess(prev => {
         const newGuess = prev.slice(0, -1);
         // Restore locked positions when backspacing
@@ -384,6 +421,9 @@ export default function GameScreen() {
         }
         return restored.join('');
       });
+      if (canDelete && settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
     } else if (currentGuess.length < 5 && key !== 'ENTER' && key !== 'BACK') {
       setCurrentGuess(prev => {
         if (lockedPositions.has(prev.length)) {
@@ -396,6 +436,9 @@ export default function GameScreen() {
         }
         return prev + key;
       });
+      if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
     }
   };
 
@@ -408,6 +451,9 @@ export default function GameScreen() {
     if (currentGuess.length !== 5 || !isValidWord(currentGuess) || isFlipping) return;
 
     // Start flip animation
+    if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    }
     setIsFlipping(true);
     setFlippedTiles(new Set()); // Reset flipped tiles
     
@@ -428,6 +474,10 @@ export default function GameScreen() {
     
     // Start each flip animation individually to control color timing
     flipSequence.forEach((animation, index) => {
+      // Haptic at the moment each tile starts flipping
+      if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+      }
       animation.start(({ finished }) => {
         if (finished) {
           // Mark this tile as flipped so it can show its color
@@ -456,19 +506,41 @@ export default function GameScreen() {
     flipRowAnimations[currentRow].forEach(anim => anim.setValue(0));
 
     // Game logic processing (guesses and keyboard already updated in submitGuess)
-
-    if (currentGuess === targetWord) {
-      setGameStatus('won');
-      // Delay celebration to allow color change to be visible
-      setTimeout(() => {
-        startCelebration();
-      }, 300);
-    } else if (currentRow >= 5) {
-      setGameStatus('lost');
-      setTimeout(() => {
-        showGameOverDialog();
-      }, 1000);
-    } else {
+    if (currentGuess === targetWord && !hasSettled) {
+      setTimeout(async () => {
+        setGameStatus('won');
+        setHasSettled(true);
+        const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
+        const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
+        setRewardCoins(coinsDelta);
+        // 不要立即推进关卡，保持在当前关卡进行庆祝
+        // try {
+        //   await completeGame(true, finalTime, false, currentRow);
+        // } catch {}
+        
+        // Delay celebration to allow color change to be visible
+        setTimeout(() => {
+          // Calculate earned coins but don't award them yet
+          const coinsEarned = [50, 40, 30, 20, 15, 10][currentRow] || 10;
+          setEarnedCoins(coinsEarned);
+          setPendingLevelUp(true);
+          
+          startCelebration();
+        }, 300);
+      
+        // 删除奖励弹框，只使用庆祝弹框
+        // setTimeout(() => {
+        //   setShowRewardModal(true);
+        // }, 1500);
+      });
+  } else if (currentRow >= 5) {
+    setGameStatus('lost');
+    setTimeout(() => {
+      completeGame(false, Date.now() - startTime); // Game lost, no coins awarded
+      // 显示失败弹框
+      showGameOverDialog();
+    }, 1000);
+  } else {
       setCurrentRow(currentRow + 1);
       setCurrentGuess('');
     }
@@ -478,7 +550,7 @@ export default function GameScreen() {
     setIsCelebrating(true);
     setCelebrationStep(1);
     
-    // Stage A: Flip animation
+    // Stage A: Flip animation for victory tiles
     const flipSequence = flipAnimations.map((anim, index) => 
       Animated.timing(anim, {
         toValue: 1,
@@ -492,119 +564,92 @@ export default function GameScreen() {
       Animated.stagger(80, flipSequence),
       Animated.delay(200)
     ]).start(() => {
-      // Stage B: Confetti and "GREAT!" text
+      // Stage B: New celebration with GREAT text and confetti cannon
       setCelebrationStep(2);
-      startConfettiAnimation();
+      startNewCelebration();
     });
   };
 
-  const startConfettiAnimation = () => {
-    // Animate "GREAT!" text
+  const startNewCelebration = () => {
+    // Animate "GREAT!" text with bounce effect
     Animated.sequence([
       Animated.timing(greatTextScale, {
-        toValue: 1.05,
-        duration: 300,
+        toValue: 1.15,  // 更大的弹跳效果
+        duration: 350,
         useNativeDriver: true,
       }),
       Animated.timing(greatTextScale, {
         toValue: 1.0,
-        duration: 200,
+        duration: 350,
         useNativeDriver: true,
       })
     ]).start();
 
-    // Animate confetti
-    const confettiAnimationsList = confettiAnimations.map((anim, index) => {
-      const isLeft = index % 2 === 0;
-      const startX = isLeft ? -50 : width + 50;
-      const endX = isLeft ? width * 0.3 + Math.random() * width * 0.4 : width * 0.3 + Math.random() * width * 0.4;
-      
-      anim.translateX.setValue(startX);
-      anim.translateY.setValue(-100);
-      anim.opacity.setValue(1);
-      anim.rotate.setValue(0);
-      
-      return Animated.parallel([
-        Animated.timing(anim.translateX, {
-          toValue: endX,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.translateY, {
-          toValue: height + 100,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.opacity, {
-          toValue: 0,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.rotate, {
-          toValue: 360,
-          duration: 1200,
-          useNativeDriver: true,
-        })
-      ]);
-    });
+    // 触发震动反馈
+    if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+      try { 
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+      } catch {}
+    }
 
-    Animated.parallel(confettiAnimationsList).start(() => {
-      // Stage C: Show modal
-      setTimeout(() => {
-        setCelebrationStep(3);
-        setShowCelebrationModal(true);
-      }, 300);
-    });
+    // 启动礼花炮 - 左侧立即启动，右侧延迟150ms
+    setTimeout(() => {
+      leftCannonRef.current?.start();
+    }, 0);
+    
+    setTimeout(() => {
+      rightCannonRef.current?.start();
+    }, 150);
+
+    // 2.5秒后显示奖励弹框
+    setTimeout(() => {
+      setCelebrationStep(3);
+      setShowCelebrationModal(true);
+    }, 2500);
   };
 
-  const handleNextLevel = async () => {
+  const stopCelebration = () => {
+    // 清理礼花炮状态
+    setIsCelebrating(false);
+    setCelebrationStep(0);
+    greatTextScale.setValue(0.8);
+    flipAnimations.forEach(anim => anim.setValue(0));
+  };
+
+  // 删除这个函数，因为我们只使用庆祝弹框中的NEXT按钮
+  // const handleNextLevel = async () => {
+  //   // 这个函数不再使用，因为我们删除了奖励弹框
+  // };
+
+  const handleNextLevel2 = async () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // 现在才真正推进关卡和奖励coins
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       
       // Check if this was a skipped game (no coin reward)
-      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
-      
-      if (isSkipped) {
+      if (isSkippedGame) {
         // Skip: advance level but no coins
-        await completeGame(false, finalTime);
+        await completeGame(true, finalTime, true); // 第三个参数true表示跳过coins奖励
       } else {
         // Normal win: advance level and award coins
-        await completeGame(true, finalTime);
+        await completeGame(true, finalTime, false, currentRow);
       }
       
       // Reset celebration state
-      setIsCelebrating(false);
+      stopCelebration();
       setShowCelebrationModal(false);
-      setCelebrationStep(0);
-      flipAnimations.forEach(anim => anim.setValue(0));
-      greatTextScale.setValue(0.8);
       
-      // Start new game
-      const newWord = getRandomWord();
-      setTargetWord(newWord);
-      setGuesses(Array(6).fill(''));
-      setCurrentGuess('');
-      setCurrentRow(0);
-      setGameStatus('playing');
-      setKeyboardStatus({});
-      setHintUsed(false);
-      setHintPosition(-1);
+      // Reset skip state for next game
+      setIsSkippedGame(false);
       
-      // 设置新关卡的背景色
-      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
-      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
-      
-      // Reset booster states for new level
-      setLockedPositions(new Set());
-      setDisabledKeys(new Set());
+      // 关卡推进后，背景颜色会通过useEffect自动更新
+      // 重置其他状态会通过useEffect监听currentLevel变化自动处理
       
     } catch (error) {
+      console.error('Error in handleNextLevel2:', error);
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -650,14 +695,14 @@ export default function GameScreen() {
         };
       case 'hint':
         return {
-          cost: 15,
+          cost: 20,
           title: 'Use Hint?',
           description: 'Reveal and lock one correct letter position.',
           icon: 'target'
         };
       case 'skip':
         return {
-          cost: 25,
+          cost: 30,
           title: 'Skip Level?',
           description: 'Skip current level and advance to the next one.',
           icon: 'play-forward'
@@ -687,33 +732,68 @@ export default function GameScreen() {
         }
         break;
         
-      case 'hint':
-        // Find available positions that aren't locked yet
-        const availablePositions = [];
-        for (let i = 0; i < 5; i++) {
-          if (!lockedPositions.has(i)) {
-            availablePositions.push(i);
+      case 'hint': {
+        // Debounce 200ms
+        const now = Date.now();
+        if (now - lastHintAt < 200) break;
+        setLastHintAt(now);
+
+        // Compute columns already confirmed green from previous rows
+        const confirmedGreen = new Set();
+        for (let r = 0; r < currentRow; r++) {
+          const g = guesses[r];
+          for (let c = 0; c < 5; c++) {
+            if (g && g[c] === targetWord[c]) confirmedGreen.add(c);
           }
         }
-        
-        if (availablePositions.length > 0) {
-          const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
-          setLockedPositions(prev => new Set([...prev, randomPos]));
-          
-          // Update current guess with the hint
-          setCurrentGuess(prev => {
-            const newGuess = prev.split('');
-            while (newGuess.length < 5) newGuess.push('');
-            newGuess[randomPos] = targetWord[randomPos];
-            return newGuess.join('');
-          });
+
+        // Exclude columns already ghosted in current row, and columns already correct in current input
+        const ghostedCols = new Set(ghostHints.filter(h => h.row === currentRow).map(h => h.col));
+        const candidateCols = [];
+        for (let c = 0; c < 5; c++) {
+          if (confirmedGreen.has(c)) continue;
+          if (ghostedCols.has(c)) continue;
+          if ((currentGuess[c] || '') === targetWord[c]) continue; // already typed correct
+          candidateCols.push(c);
         }
+
+        if (candidateCols.length === 0) {
+          // No available hint
+          // Lightweight toast replacement
+          Alert.alert('No available hint', 'All positions are already known.');
+          break;
+        }
+
+        const col = candidateCols[Math.floor(Math.random() * candidateCols.length)];
+        const ghost = { row: currentRow, col, letter: targetWord[col] };
+        setGhostHints(prev => [...prev, ghost]);
+
+        // Keyboard: mark letter as present (green priority)
+        setKeyboardStatus(prev => ({ ...prev, [ghost.letter]: 'correct' }));
+
+        // Haptic feedback for hint (optional per current strategy)
+        if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+        }
+
+        // Trigger small scale+fade animation on that cell (no rotation)
+        const key = `${currentRow}-${col}`;
+        const anim = new Animated.Value(0);
+        ghostFlipMapRef.current.set(key, anim);
+        Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
+          // Keep at 1; remove reference so no style is applied unless ghost visible
+          ghostFlipMapRef.current.delete(key);
+        });
         break;
+      }
         
       case 'skip':
         // Complete current game as skipped
         const endTime = Date.now();
         const finalTime = endTime - startTime;
+        
+        // Mark this as a skipped game
+        setIsSkippedGame(true);
         
         // Fill in the correct answer
         const newGuesses = [...guesses];
@@ -772,6 +852,34 @@ export default function GameScreen() {
     return 'SUBMIT';
   };
 
+  const renderRewardModal = () => {
+    if (!showRewardModal) return null;
+
+    return (
+      <View style={styles.modalOverlay}>
+        <View style={styles.rewardModal}>
+          <Text style={styles.rewardTitle}>Level Complete! 🎉</Text>
+          <View style={styles.rewardContent}>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              style={styles.coinIcon}
+            />
+            <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.nextLevelButton}
+            onPress={handleNextLevel}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.nextLevelButtonText}>
+              {isSubmitting ? 'Loading...' : 'Next Level'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentBackgroundColor }]}>
       {/* Celebration Overlay */}
@@ -787,31 +895,34 @@ export default function GameScreen() {
                 <Text style={styles.greatText}>GREAT!</Text>
               </Animated.View>
               
-              {/* Confetti */}
-              {confettiAnimations.map((anim, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.confetti,
-                    {
-                      backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'][index % 6],
-                      transform: [
-                        { translateX: anim.translateX },
-                        { translateY: anim.translateY },
-                        { rotate: anim.rotate.interpolate({
-                          inputRange: [0, 360],
-                          outputRange: ['0deg', '360deg']
-                        })}
-                      ],
-                      opacity: anim.opacity
-                    }
-                  ]}
-                />
-              ))}
+              {/* 新的礼花炮组件 */}
+              <ConfettiCannon
+                ref={leftCannonRef}
+                count={120}
+                origin={{x: 0, y: 0}}
+                explosionSpeed={450}
+                fallSpeed={2500}
+                fadeOut={true}
+                autoStart={false}
+                style={styles.confettiCannon}
+              />
+              <ConfettiCannon
+                ref={rightCannonRef}
+                count={120}
+                origin={{x: width, y: 0}}
+                explosionSpeed={450}
+                fallSpeed={2500}
+                fadeOut={true}
+                autoStart={false}
+                style={styles.confettiCannon}
+              />
             </>
           )}
         </View>
       )}
+
+      {/* 删除奖励弹框，只使用庆祝弹框 */}
+      {/* {renderRewardModal()} */}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -824,7 +935,10 @@ export default function GameScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.coinsInfo}>
-          <Ionicons name="star" size={20} color="#FFD700" />
+          <Image 
+            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+            style={{ width: 20, height: 20 }}
+          />
           <Text style={styles.coinsText}>{coins}</Text>
         </View>
       </View>
@@ -836,17 +950,32 @@ export default function GameScreen() {
               const letter = rowIndex === currentRow && gameStatus === 'playing' 
                 ? currentGuess[colIndex] || ''
                 : guess[colIndex] || '';
+              // Ghost hint for current row when no user value
+              const ghost = ghostHints.find(h => h.row === rowIndex && h.col === colIndex);
+              const ghostKey = `${rowIndex}-${colIndex}`;
+              const ghostAnim = ghostFlipMapRef.current.get(ghostKey);
               
               return (
                 <Animated.View
                   key={colIndex}
                   style={[
                     styles.tile,
-                    { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
-                    getTileStyle(rowIndex, colIndex)
+                    // If ghost visible (no user letter), render semi-transparent green
+                    ghost && rowIndex === currentRow && !letter
+                      ? styles.ghostTile
+                      : { backgroundColor: getTileColor(letter, colIndex, rowIndex) },
+                    getTileStyle(rowIndex, colIndex),
+                    ghost && rowIndex === currentRow && !letter && ghostAnim
+                      ? {
+                          opacity: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }),
+                          transform: [{ scale: ghostAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }]
+                        }
+                      : null
                   ]}
                 >
-                  <Text style={styles.tileText}>{letter}</Text>
+                  <Text style={[styles.tileText, ghost && rowIndex === currentRow && !letter ? styles.ghostLetter : null]}>
+                    {letter || (ghost && rowIndex === currentRow ? ghost.letter : '')}
+                  </Text>
                 </Animated.View>
               );
             })}
@@ -900,11 +1029,19 @@ export default function GameScreen() {
           <TouchableOpacity
             style={[styles.circularBooster, coins < 10 && styles.disabledBooster]}
             onPress={() => handleBooster('dart')}
-            disabled={coins < 10 || isCelebrating || isFlipping}
-          >
-            <Ionicons name="search" size={20} color="white" />
+            disabled={coins < 10 || isCelebrating || isFlipping}>
+            <View style={styles.boosterIconContainer}>
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k4w7geqsrcw37csh4bvm7_1758003955_img_1-1.webp' }}
+                style={[styles.boosterIconImage, { opacity: canUseDart ? 1 : 0.3 }]}
+                resizeMode="contain"
+              />
+            </View>
             <View style={styles.boosterPriceContainer}>
-              <Ionicons name="star" size={10} color="#FFD700" />
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                style={{ width: 10, height: 10 }}
+              />
               <Text style={styles.boosterPriceText}>10</Text>
             </View>
           </TouchableOpacity>
@@ -914,10 +1051,19 @@ export default function GameScreen() {
             onPress={() => handleBooster('hint')}
             disabled={coins < 15 || isCelebrating || isFlipping}
           >
-            <Ionicons name="target" size={20} color="white" />
+            <View style={styles.boosterIconContainer}>
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k571heq8t6b7hvbq1675k_1758003976_img_1.webp' }}
+                style={[styles.boosterIconImage, { opacity: canUseHint ? 1 : 0.3 }]}
+                resizeMode="contain"
+              />
+            </View>
             <View style={styles.boosterPriceContainer}>
-              <Ionicons name="star" size={10} color="#FFD700" />
-              <Text style={styles.boosterPriceText}>15</Text>
+              <Image 
+                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                style={{ width: 10, height: 10 }}
+              />
+              <Text style={styles.boosterPriceText}>20</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -937,10 +1083,19 @@ export default function GameScreen() {
           onPress={() => handleBooster('skip')}
           disabled={coins < 25 || isCelebrating || isFlipping}
         >
-          <Ionicons name="play-forward" size={20} color="white" />
+          <View style={styles.boosterIconContainer}>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58rq967fvn8qpk556rabq6p_1758009760_img_0.webp' }}
+              style={[styles.boosterIconImage, { width: 84, height: 84 }, { opacity: canUseSkip ? 1 : 0.3 }]}
+              resizeMode={'contain'}
+            />
+          </View>
           <View style={styles.boosterPriceContainer}>
-            <Ionicons name="star" size={10} color="#FFD700" />
-            <Text style={styles.boosterPriceText}>25</Text>
+            <Image 
+              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              style={{ width: 10, height: 10 }}
+            />
+            <Text style={styles.boosterPriceText}>30</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -959,12 +1114,12 @@ export default function GameScreen() {
             
             <View style={styles.rewardContainer}>
               <Ionicons name="star" size={48} color="#FFD700" />
-              <Text style={styles.rewardText}>+20 Coins</Text>
+              <Text style={styles.rewardText}>+{rewardCoins} Coins</Text>
             </View>
             
             <TouchableOpacity
               style={[styles.nextButton, isSubmitting && styles.disabledButton]}
-              onPress={handleNextLevel}
+              onPress={handleNextLevel2}
               disabled={isSubmitting}
             >
               <Text style={styles.nextButtonText}>
@@ -996,7 +1151,7 @@ export default function GameScreen() {
                 <View style={styles.boosterModalHeader}>
                   <Ionicons 
                     name={getBoosterInfo(selectedBooster).icon} 
-                    size={40} 
+                    size={32}
                     color="#6366f1" 
                   />
                   <Text style={styles.boosterModalTitle}>
@@ -1144,10 +1299,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.9)',
     backgroundColor: 'transparent',
   },
+  ghostTile: {
+    backgroundColor: 'rgba(106, 170, 100, 0.7)',
+  },
   tileText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#374151',
+  },
+  ghostLetter: {
+    color: '#ffffff',
+    opacity: 0.9,
   },
   keyboard: {
     paddingHorizontal: 4,
@@ -1224,6 +1386,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexShrink: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1265,23 +1428,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
+  boosterIconContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  boosterIconImage: {
+    width: 68,
+    height: 68,
+    marginTop: 4,
+  },
   submitButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 140,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#6aaa64',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'center',
+    paddingHorizontal: 0,
+    transform: [{ translateY: -4 }],
   },
   submitButtonText: {
-    fontSize: 22,
-    fontWeight: '900',
     color: 'white',
+    fontSize: 18, // will shrink automatically when needed
+    fontWeight: '700',
   },
   skipButton: {
     width: 56,
@@ -1291,6 +1467,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexShrink: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1324,24 +1501,76 @@ const styles = StyleSheet.create({
     zIndex: 1001,
   },
   greatText: {
-    fontSize: 48,
+    fontSize: 54,
     fontWeight: 'bold',
     color: 'white',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 6,
+    // iOS专用的文字描边（如果支持）
+    textDecorationColor: 'rgba(255, 255, 255, 0.9)',
   },
-  confetti: {
+  confettiCannon: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    zIndex: 1000,
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  rewardModal: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    marginHorizontal: 40,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  rewardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rewardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  coinIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  rewardAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#6aaa64',
+  },
+  nextLevelButton: {
+    backgroundColor: '#6aaa64',
+    borderRadius: 12,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+  },
+  nextLevelButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   celebrationModal: {
     backgroundColor: 'white',
@@ -1753,61 +1982,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
-  },
-  exampleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  exampleLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
-  },
-  labelContainer: {
     alignItems: 'center',
   },
-  labelText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 4,
+  exampleImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
   },
-  labelArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#666',
-  },
-  exampleTiles: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  bottomLabel: {
-    alignItems: 'center',
-  },
-  bottomLabelArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#666',
-    marginBottom: 4,
-  },
-  bottomLabelText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
+  // 删除了旧的example相关样式，现在使用图片替代
 });

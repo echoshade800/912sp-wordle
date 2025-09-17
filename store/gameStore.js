@@ -6,6 +6,13 @@ const useGameStore = create((set, get) => ({
   userData: null,
   storageData: null,
   
+  // Settings
+  settings: {
+    hapticsEnabled: true,
+  },
+
+  setHapticsEnabled: (enabled) => set((state) => ({ settings: { ...state.settings, hapticsEnabled: !!enabled } })),
+  
   // Game state
   currentLevel: 1,
   coins: 100,
@@ -55,7 +62,7 @@ const useGameStore = create((set, get) => ({
     // Update state
     set(updates);
     
-    // Persist to storage
+    // Persist to storage (settings not persisted yet by design)
     try {
       await StorageUtils.setData({
         maxLevel: newData.maxLevel,
@@ -85,9 +92,11 @@ const useGameStore = create((set, get) => ({
   },
   
   // Complete current game
-  completeGame: async (won, finalTime) => {
+  completeGame: async (won, finalTime, skipCoins = false, guessedRowIndex = null) => {
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
-    if (!currentGame) return;
+    if (!currentGame) {
+      return;
+    }
     
     const completedGame = {
       ...currentGame,
@@ -104,11 +113,21 @@ const useGameStore = create((set, get) => ({
     };
     
     // Update records if this is a winning game
-    if (won) {
+    if (won && !skipCoins) {
       updates.maxLevel = Math.max(maxLevel, currentGame.level);
       updates.maxScore = Math.max(maxScore, completedGame.score);
       updates.maxTime = maxTime === 0 ? finalTime : Math.min(maxTime, finalTime);
-      updates.coins = coins + (completedGame.score >= 50 ? 20 : 10);
+      // Coins by guessed row (0-based index): 0->50, 1->40, 2->30, 3->20, 4->15, 5->10
+      let reward = 0;
+      if (typeof guessedRowIndex === 'number') {
+        const map = [50, 40, 30, 20, 15, 10];
+        reward = map[Math.max(0, Math.min(5, guessedRowIndex))] || 0;
+      }
+      updates.coins = coins + reward;
+      updates.currentLevel = currentGame.level + 1;
+    } else if (won && skipCoins) {
+      // Skip case: advance level but don't award coins
+      updates.maxLevel = Math.max(maxLevel, currentGame.level);
       updates.currentLevel = currentGame.level + 1;
     }
     

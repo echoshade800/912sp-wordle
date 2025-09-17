@@ -1,6 +1,18 @@
-const { getDefaultConfig } = require('expo/metro-config');
+const { getDefaultConfig } = require('@expo/metro-config');
 
-/** @type {import('expo/metro-config').MetroConfig} */
+/**
+ * Metro configuration
+ * https://facebook.github.io/metro/docs/configuration
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
 const config = getDefaultConfig(__dirname);
+
+// Enable experimental require.context for Expo Router
+config.transformer = {
+  ...config.transformer,
+  unstable_allowRequireContext: true,
+};
+
 
 module.exports = config;

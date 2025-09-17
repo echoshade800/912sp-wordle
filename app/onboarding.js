@@ -67,7 +67,15 @@ export default function OnboardingScreen() {
           </View>
           
           <Text style={styles.title}>{slides[currentSlide].title}</Text>
-          <Text style={styles.description}>{slides[currentSlide].description}</Text>
+          {currentSlide === 2 ? (
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descriptionLine}>🟩 Green: Correct letter in correct position</Text>
+              <Text style={styles.descriptionLine}>🟨 Yellow: Correct letter in wrong position</Text>
+              <Text style={styles.descriptionLine}>⬜ Gray: Letter not in the word</Text>
+            </View>
+          ) : (
+            <Text style={styles.description}>{slides[currentSlide].description}</Text>
+          )}
           
           {currentSlide === 2 && (
             <View style={styles.exampleContainer}>
@@ -167,6 +175,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 20,
+  },
+  descriptionContainer: {
+    paddingHorizontal: 20,
+  },
+  descriptionLine: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 8,
   },
   exampleContainer: {
     marginTop: 30,
