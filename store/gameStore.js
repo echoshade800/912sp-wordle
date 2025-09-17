@@ -94,7 +94,9 @@ const useGameStore = create((set, get) => ({
   // Complete current game
   completeGame: async (won, finalTime, skipCoins = false, guessedRowIndex = null) => {
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
-    if (!currentGame) return;
+    if (!currentGame) {
+      return;
+    }
     
     const completedGame = {
       ...currentGame,

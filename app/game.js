@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import useGameStore from '../store/gameStore';
 import { getRandomWord, isValidWord } from '../data/words';
 import * as Haptics from 'expo-haptics';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const GameRulesModal = ({ visible, onClose }) => {
   return (
@@ -88,41 +89,11 @@ const GameRulesModal = ({ visible, onClose }) => {
         </View>
 
         <View style={styles.exampleSection}>
-          <Text style={styles.exampleTitle}>EXAMPLE:</Text>
-          
-          <View style={styles.exampleLabels}>
-            <View style={styles.labelContainer}>
-              <Text style={styles.labelText}>Letter in{'\n'}correct{'\n'}spot</Text>
-              <View style={styles.labelArrow} />
-            </View>
-            <View style={styles.labelContainer}>
-              <Text style={styles.labelText}>Letter in{'\n'}the wrong{'\n'}spot</Text>
-              <View style={styles.labelArrow} />
-            </View>
-          </View>
-          
-          <View style={styles.exampleTiles}>
-            <View style={[styles.exampleTile, { backgroundColor: '#8bc34a' }]}>
-              <Text style={styles.exampleTileText}>S</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
-              <Text style={styles.exampleTileText}>C</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
-              <Text style={styles.exampleTileText}>O</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#6b7280' }]}>
-              <Text style={styles.exampleTileText}>R</Text>
-            </View>
-            <View style={[styles.exampleTile, { backgroundColor: '#f59e0b' }]}>
-              <Text style={styles.exampleTileText}>E</Text>
-            </View>
-          </View>
-          
-          <View style={styles.bottomLabel}>
-            <View style={styles.bottomLabelArrow} />
-            <Text style={styles.bottomLabelText}>Letter not{'\n'}in word</Text>
-          </View>
+          <Image 
+            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k5b68m0tfwar0zgke24dqkd7_1758091132_img_0.webp' }}
+            style={styles.exampleImage}
+            resizeMode="contain"
+          />
         </View>
       </View>
     </Modal>
@@ -169,6 +140,8 @@ export default function GameScreen() {
   const [currentGuess, setCurrentGuess] = useState('');
   const [currentRow, setCurrentRow] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
+  
+  // 调试日志已删除
   const [keyboardStatus, setKeyboardStatus] = useState({});
   const [startTime] = useState(Date.now());
   const [hintUsed, setHintUsed] = useState(false);
@@ -178,16 +151,14 @@ export default function GameScreen() {
   const [lastHintAt, setLastHintAt] = useState(0);
   const ghostFlipMapRef = useRef(new Map()); // key: `${row}-${col}` -> Animated.Value
   const gameStarted = useRef(false);
+  // 礼花炮引用
+  const leftCannonRef = useRef(null);
+  const rightCannonRef = useRef(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
-  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: confetti, 3: modal
+  const [celebrationStep, setCelebrationStep] = useState(0); // 0: none, 1: flip, 2: new celebration, 3: modal
   const [flipAnimations] = useState(Array.from({ length: 5 }, () => new Animated.Value(0)));
-  const [confettiAnimations] = useState(Array.from({ length: 20 }, () => ({
-    translateY: new Animated.Value(-100),
-    translateX: new Animated.Value(0),
-    opacity: new Animated.Value(1),
-    rotate: new Animated.Value(0)
-  })));
+  // 旧的confetti动画已删除，使用新的react-native-confetti-cannon
   const [greatTextScale] = useState(new Animated.Value(0.8));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -214,6 +185,7 @@ export default function GameScreen() {
   
   // Rules modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [isSkippedGame, setIsSkippedGame] = useState(false);
 
   const showGameOverDialog = () => {
     setShowGameOverModal(true);
@@ -328,6 +300,9 @@ export default function GameScreen() {
       ghostFlipMapRef.current = new Map();
       setLockedPositions(new Set());
       setDisabledKeys(new Set());
+      setIsSkippedGame(false); // Reset skip state for new level
+      setHasSettled(false); // Reset victory detection state for new level
+      setRewardCoins(0); // Reset reward coins for new level
       const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
       setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
       // Start game session for the new level
@@ -337,11 +312,13 @@ export default function GameScreen() {
   }, [currentLevel, startGame, showCelebrationModal]);
 
   useEffect(() => {
-    if (gameStatus !== 'playing') {
+    // 只有失败时才自动完成游戏，胜利时等待用户点击Next按钮
+    if (gameStatus === 'lost') {
       const endTime = Date.now();
       const finalTime = endTime - startTime;
-      completeGame(gameStatus === 'won', finalTime);
+      completeGame(false, finalTime);
     }
+    // 胜利时不自动调用 completeGame，等待用户点击奖励弹框中的Next按钮
   }, [gameStatus, startTime, completeGame]);
 
   const getTileColor = (letter, position, rowIndex) => {
@@ -536,33 +513,34 @@ export default function GameScreen() {
         const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
         const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
         setRewardCoins(coinsDelta);
-        const endTime = Date.now();
-        const finalTime = endTime - startTime;
-        try {
-          await completeGame(true, finalTime, false, currentRow);
-        } catch {}
+        // 不要立即推进关卡，保持在当前关卡进行庆祝
+        // try {
+        //   await completeGame(true, finalTime, false, currentRow);
+        // } catch {}
+        
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
-      
-      // Calculate earned coins but don't award them yet
-      const coinsEarned = [50, 40, 30, 20, 15, 10][currentRow] || 10;
-      setEarnedCoins(coinsEarned);
-      setPendingLevelUp(true);
-      
+          // Calculate earned coins but don't award them yet
+          const coinsEarned = [50, 40, 30, 20, 15, 10][currentRow] || 10;
+          setEarnedCoins(coinsEarned);
+          setPendingLevelUp(true);
+          
           startCelebration();
         }, 300);
       
-      // Show reward modal after 3 seconds
-      setTimeout(() => {
-        setShowRewardModal(true);
-      }, 3000);
+        // 删除奖励弹框，只使用庆祝弹框
+        // setTimeout(() => {
+        //   setShowRewardModal(true);
+        // }, 1500);
       });
-    } else if (currentRow >= 5) {
-      setGameStatus('lost');
-      setTimeout(() => {
-       completeGame(false, Date.now() - startTime); // Game lost, no coins awarded
-      }, 1000);
-    } else {
+  } else if (currentRow >= 5) {
+    setGameStatus('lost');
+    setTimeout(() => {
+      completeGame(false, Date.now() - startTime); // Game lost, no coins awarded
+      // 显示失败弹框
+      showGameOverDialog();
+    }, 1000);
+  } else {
       setCurrentRow(currentRow + 1);
       setCurrentGuess('');
     }
@@ -572,7 +550,7 @@ export default function GameScreen() {
     setIsCelebrating(true);
     setCelebrationStep(1);
     
-    // Stage A: Flip animation
+    // Stage A: Flip animation for victory tiles
     const flipSequence = flipAnimations.map((anim, index) => 
       Animated.timing(anim, {
         toValue: 1,
@@ -586,141 +564,92 @@ export default function GameScreen() {
       Animated.stagger(80, flipSequence),
       Animated.delay(200)
     ]).start(() => {
-      // Stage B: Confetti and "GREAT!" text
+      // Stage B: New celebration with GREAT text and confetti cannon
       setCelebrationStep(2);
-      startConfettiAnimation();
+      startNewCelebration();
     });
   };
 
-  const startConfettiAnimation = () => {
-    // Animate "GREAT!" text
+  const startNewCelebration = () => {
+    // Animate "GREAT!" text with bounce effect
     Animated.sequence([
       Animated.timing(greatTextScale, {
-        toValue: 1.05,
-        duration: 300,
+        toValue: 1.15,  // 更大的弹跳效果
+        duration: 350,
         useNativeDriver: true,
       }),
       Animated.timing(greatTextScale, {
         toValue: 1.0,
-        duration: 200,
+        duration: 350,
         useNativeDriver: true,
       })
     ]).start();
 
-    // Animate confetti
-    const confettiAnimationsList = confettiAnimations.map((anim, index) => {
-      const isLeft = index % 2 === 0;
-      const startX = isLeft ? -50 : width + 50;
-      const endX = isLeft ? width * 0.3 + Math.random() * width * 0.4 : width * 0.3 + Math.random() * width * 0.4;
-      
-      anim.translateX.setValue(startX);
-      anim.translateY.setValue(-100);
-      anim.opacity.setValue(1);
-      anim.rotate.setValue(0);
-      
-      return Animated.parallel([
-        Animated.timing(anim.translateX, {
-          toValue: endX,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.translateY, {
-          toValue: height + 100,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.opacity, {
-          toValue: 0,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.rotate, {
-          toValue: 360,
-          duration: 1200,
-          useNativeDriver: true,
-        })
-      ]);
-    });
-
-    Animated.parallel(confettiAnimationsList).start(() => {
-      // Stage C: Show modal
-      setTimeout(() => {
-        setCelebrationStep(3);
-        setShowCelebrationModal(true);
-      }, 300);
-    });
-  };
-
-  const handleNextLevel = async () => {
-    if (!pendingLevelUp) return;
-    
-    setIsSubmitting(true);
-    setShowRewardModal(false);
-    
-    try {
-      // Complete current game and award coins
-      await completeGame(true, Date.now() - startTime, false, currentRow);
-      
-      // Initialize next level
-      initializeGame();
-    } catch (error) {
-      console.error('Error advancing to next level:', error);
-      Alert.alert('Error', 'Failed to advance to next level');
-    } finally {
-      setIsSubmitting(false);
+    // 触发震动反馈
+    if (settings?.hapticsEnabled && Platform.OS !== 'web') {
+      try { 
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+      } catch {}
     }
+
+    // 启动礼花炮 - 左侧立即启动，右侧延迟150ms
+    setTimeout(() => {
+      leftCannonRef.current?.start();
+    }, 0);
+    
+    setTimeout(() => {
+      rightCannonRef.current?.start();
+    }, 150);
+
+    // 2.5秒后显示奖励弹框
+    setTimeout(() => {
+      setCelebrationStep(3);
+      setShowCelebrationModal(true);
+    }, 2500);
   };
+
+  const stopCelebration = () => {
+    // 清理礼花炮状态
+    setIsCelebrating(false);
+    setCelebrationStep(0);
+    greatTextScale.setValue(0.8);
+    flipAnimations.forEach(anim => anim.setValue(0));
+  };
+
+  // 删除这个函数，因为我们只使用庆祝弹框中的NEXT按钮
+  // const handleNextLevel = async () => {
+  //   // 这个函数不再使用，因为我们删除了奖励弹框
+  // };
 
   const handleNextLevel2 = async () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // 现在才真正推进关卡和奖励coins
       const endTime = Date.now();
       const finalTime = endTime - startTime;
       
       // Check if this was a skipped game (no coin reward)
-      const isSkipped = gameStatus === 'won' && guesses[currentRow] === targetWord && currentRow < 5;
-      
-      if (isSkipped) {
+      if (isSkippedGame) {
         // Skip: advance level but no coins
-        await completeGame(false, finalTime);
+        await completeGame(true, finalTime, true); // 第三个参数true表示跳过coins奖励
       } else {
         // Normal win: advance level and award coins
-        await completeGame(true, finalTime);
+        await completeGame(true, finalTime, false, currentRow);
       }
       
       // Reset celebration state
-      setIsCelebrating(false);
+      stopCelebration();
       setShowCelebrationModal(false);
-      setCelebrationStep(0);
-      flipAnimations.forEach(anim => anim.setValue(0));
-      greatTextScale.setValue(0.8);
       
-      // Start new game
-      const newWord = getRandomWord();
-      setTargetWord(newWord);
-      setGuesses(Array(6).fill(''));
-      setCurrentGuess('');
-      setCurrentRow(0);
-      setGameStatus('playing');
-      setKeyboardStatus({});
-      setHintUsed(false);
-      setHintPosition(-1);
-      setGhostHints([]);
-      ghostFlipMapRef.current = new Map();
+      // Reset skip state for next game
+      setIsSkippedGame(false);
       
-      // 设置新关卡的背景色
-      const colorIndex = (currentLevel - 1) % BACKGROUND_COLORS.length;
-      setCurrentBackgroundColor(BACKGROUND_COLORS[colorIndex]);
-      
-      // Reset booster states for new level
-      setLockedPositions(new Set());
-      setDisabledKeys(new Set());
+      // 关卡推进后，背景颜色会通过useEffect自动更新
+      // 重置其他状态会通过useEffect监听currentLevel变化自动处理
       
     } catch (error) {
+      console.error('Error in handleNextLevel2:', error);
       Alert.alert('Error', 'Failed to proceed to next level. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -863,6 +792,9 @@ export default function GameScreen() {
         const endTime = Date.now();
         const finalTime = endTime - startTime;
         
+        // Mark this as a skipped game
+        setIsSkippedGame(true);
+        
         // Fill in the correct answer
         const newGuesses = [...guesses];
         newGuesses[currentRow] = targetWord;
@@ -963,34 +895,34 @@ export default function GameScreen() {
                 <Text style={styles.greatText}>GREAT!</Text>
               </Animated.View>
               
-              {/* Confetti */}
-              {confettiAnimations.map((anim, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.confetti,
-                    {
-                      backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'][index % 6],
-                      transform: [
-                        { translateX: anim.translateX },
-                        { translateY: anim.translateY },
-                        { rotate: anim.rotate.interpolate({
-                          inputRange: [0, 360],
-                          outputRange: ['0deg', '360deg']
-                        })}
-                      ],
-                      opacity: anim.opacity
-                    }
-                  ]}
-                />
-              ))}
+              {/* 新的礼花炮组件 */}
+              <ConfettiCannon
+                ref={leftCannonRef}
+                count={120}
+                origin={{x: 0, y: 0}}
+                explosionSpeed={450}
+                fallSpeed={2500}
+                fadeOut={true}
+                autoStart={false}
+                style={styles.confettiCannon}
+              />
+              <ConfettiCannon
+                ref={rightCannonRef}
+                count={120}
+                origin={{x: width, y: 0}}
+                explosionSpeed={450}
+                fallSpeed={2500}
+                fadeOut={true}
+                autoStart={false}
+                style={styles.confettiCannon}
+              />
             </>
           )}
         </View>
       )}
 
-      {/* Reward Modal */}
-      {renderRewardModal()}
+      {/* 删除奖励弹框，只使用庆祝弹框 */}
+      {/* {renderRewardModal()} */}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -1569,18 +1501,18 @@ const styles = StyleSheet.create({
     zIndex: 1001,
   },
   greatText: {
-    fontSize: 48,
+    fontSize: 54,
     fontWeight: 'bold',
     color: 'white',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 6,
+    // iOS专用的文字描边（如果支持）
+    textDecorationColor: 'rgba(255, 255, 255, 0.9)',
   },
-  confetti: {
+  confettiCannon: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    zIndex: 1000,
   },
   modalOverlay: {
     position: 'absolute',
@@ -2050,61 +1982,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
-  },
-  exampleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  exampleLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
-  },
-  labelContainer: {
     alignItems: 'center',
   },
-  labelText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 4,
+  exampleImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
   },
-  labelArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#666',
-  },
-  exampleTiles: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  bottomLabel: {
-    alignItems: 'center',
-  },
-  bottomLabelArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#666',
-    marginBottom: 4,
-  },
-  bottomLabelText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
+  // 删除了旧的example相关样式，现在使用图片替代
 });
