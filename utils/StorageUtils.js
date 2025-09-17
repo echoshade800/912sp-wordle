@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * Storage utility class for AsyncStorage operations
  */
 class StorageUtils {
-  static miniAppName = 'wordle';
+  static miniAppName = 'WordleMiniApp';
   
   static async getUserData() {
     try {
