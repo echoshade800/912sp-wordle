@@ -108,7 +108,7 @@ const GameRulesModal = ({ visible, onClose }) => {
             {/* EXAMPLE 部分 */}
             <View style={styles.exampleSection}>
               <Image
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k5b68m0tfwar0zgke24dqkd7_1758091132_img_0.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/example.webp' }}
                 style={styles.exampleImage}
                 resizeMode="contain"
               />
@@ -265,7 +265,7 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground 
-      source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k5bamvpzenf9z12y6af7n40d_1758095669_img_1.webp' }}
+      source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/background.webp' }}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -318,7 +318,7 @@ export default function HomeScreen() {
               ]}
             >
               <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
                 style={styles.coinIcon}
               />
               <Text style={styles.coinsText}>{coins}</Text>
