@@ -61,7 +61,7 @@ const useGameStore = create((set, get) => ({
     
     // Update state
     set(updates);
-    
+    console.log('updateGameData to local storage', updates);
     // Persist to storage (settings not persisted yet by design)
     try {
       await StorageUtils.setData({
@@ -92,7 +92,8 @@ const useGameStore = create((set, get) => ({
   },
   
   // Complete current game
-  completeGame: async (won, finalTime, skipCoins = false, guessedRowIndex = null) => {
+  completeGame: async (won, finalTime, skipCoins = false, guessedRowIndex = null, advanceLevel = true) => {
+    console.log('completeGame', won, finalTime, skipCoins, guessedRowIndex, advanceLevel);
     const { currentGame, gameHistory, maxLevel, maxScore, maxTime, coins } = get();
     if (!currentGame) {
       return;
@@ -124,11 +125,16 @@ const useGameStore = create((set, get) => ({
         reward = map[Math.max(0, Math.min(5, guessedRowIndex))] || 0;
       }
       updates.coins = coins + reward;
-      updates.currentLevel = currentGame.level + 1;
+      // Only advance level if advanceLevel is true
+      if (advanceLevel) {
+        updates.currentLevel = currentGame.level + 1;
+      }
     } else if (won && skipCoins) {
       // Skip case: advance level but don't award coins
       updates.maxLevel = Math.max(maxLevel, currentGame.level);
-      updates.currentLevel = currentGame.level + 1;
+      if (advanceLevel) {
+        updates.currentLevel = currentGame.level + 1;
+      }
     }
     
     await get().updateGameData(updates);
