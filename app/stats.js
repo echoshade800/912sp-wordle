@@ -77,7 +77,7 @@ export default function StatsScreen() {
         <Text style={styles.headerTitle}>Stats & History</Text>
         <View style={styles.coinsInfo}>
           <Image 
-            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+            source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
             style={{ width: 20, height: 20 }}
           />
           <Text style={styles.coinsText}>{coins}</Text>

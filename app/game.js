@@ -90,7 +90,7 @@ const GameRulesModal = ({ visible, onClose }) => {
 
         <View style={styles.exampleSection}>
           <Image 
-            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k5b68m0tfwar0zgke24dqkd7_1758091132_img_0.webp' }}
+            source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/example.webp' }}
             style={styles.exampleImage}
             resizeMode="contain"
           />
@@ -860,7 +860,7 @@ export default function GameScreen() {
           <Text style={styles.rewardTitle}>Level Complete! 🎉</Text>
           <View style={styles.rewardContent}>
             <Image 
-              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
               style={styles.coinIcon}
             />
             <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
@@ -935,7 +935,7 @@ export default function GameScreen() {
         </View>
         <View style={styles.coinsInfo}>
           <Image 
-            source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+            source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
             style={{ width: 20, height: 20 }}
           />
           <Text style={styles.coinsText}>{coins}</Text>
@@ -1031,14 +1031,14 @@ export default function GameScreen() {
             disabled={coins < 10 || isCelebrating || isFlipping}>
             <View style={styles.boosterIconContainer}>
               <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k4w7geqsrcw37csh4bvm7_1758003955_img_1-1.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/dart.webp' }}
                 style={[styles.boosterIconImage, { opacity: canUseDart ? 1 : 0.3 }]}
                 resizeMode="contain"
               />
             </View>
             <View style={styles.boosterPriceContainer}>
               <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
                 style={{ width: 10, height: 10 }}
               />
               <Text style={styles.boosterPriceText}>10</Text>
@@ -1052,14 +1052,14 @@ export default function GameScreen() {
           >
             <View style={styles.boosterIconContainer}>
               <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58k571heq8t6b7hvbq1675k_1758003976_img_1.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/hint.webp' }}
                 style={[styles.boosterIconImage, { opacity: canUseHint ? 1 : 0.3 }]}
                 resizeMode="contain"
               />
             </View>
             <View style={styles.boosterPriceContainer}>
               <Image 
-                source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
                 style={{ width: 10, height: 10 }}
               />
               <Text style={styles.boosterPriceText}>20</Text>
@@ -1084,14 +1084,14 @@ export default function GameScreen() {
         >
           <View style={styles.boosterIconContainer}>
             <Image 
-              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58rq967fvn8qpk556rabq6p_1758009760_img_0.webp' }}
+              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/skip.webp' }}
               style={[styles.boosterIconImage, { width: 84, height: 84 }, { opacity: canUseSkip ? 1 : 0.3 }]}
               resizeMode={'contain'}
             />
           </View>
           <View style={styles.boosterPriceContainer}>
             <Image 
-              source={{ uri: 'https://xbeirdgyzgnbqbeqpswp.supabase.co/storage/v1/object/public/photo/assets_task_01k58q0270fpds2d9shszh5f72_1758007946_img_0.webp' }}
+              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
               style={{ width: 10, height: 10 }}
             />
             <Text style={styles.boosterPriceText}>30</Text>
