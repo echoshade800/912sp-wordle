@@ -126,7 +126,7 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <TouchableOpacity style={styles.linkButton} onPress={handleContactSupport}>
             <Ionicons name="mail" size={20} color="#666" />
@@ -136,7 +136,7 @@ export default function AboutScreen() {
             <Ionicons name="shield-checkmark" size={20} color="#666" />
             <Text style={styles.linkText}>Privacy Policy</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Version 1.0.0</Text>
