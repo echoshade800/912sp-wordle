@@ -513,10 +513,15 @@ export default function GameScreen() {
         const attemptIndex = Math.min(currentRow + 1, 6); // 1..6
         const coinsDelta = WIN_REWARD[attemptIndex - 1] || WIN_REWARD[5];
         setRewardCoins(coinsDelta);
-        // 不要立即推进关卡，保持在当前关卡进行庆祝
-        // try {
-        //   await completeGame(true, finalTime, false, currentRow);
-        // } catch {}
+        
+        // 立即存储coin奖励到本地，但不推进关卡
+        try {
+          const endTime = Date.now();
+          const finalTime = endTime - startTime;
+          await completeGame(true, finalTime, false, currentRow, false); // advanceLevel = false
+        } catch (error) {
+          console.error('Failed to save coin reward:', error);
+        }
         
         // Delay celebration to allow color change to be visible
         setTimeout(() => {
@@ -527,11 +532,6 @@ export default function GameScreen() {
           
           startCelebration();
         }, 300);
-      
-        // 删除奖励弹框，只使用庆祝弹框
-        // setTimeout(() => {
-        //   setShowRewardModal(true);
-        // }, 1500);
       });
   } else if (currentRow >= 5) {
     setGameStatus('lost');
@@ -625,17 +625,16 @@ export default function GameScreen() {
     setIsSubmitting(true);
     
     try {
-      // 现在才真正推进关卡和奖励coins
-      const endTime = Date.now();
-      const finalTime = endTime - startTime;
+      // Coin奖励已经在胜利时存储了，这里只需要推进关卡
+      const { updateGameData, currentLevel } = useGameStore.getState();
       
       // Check if this was a skipped game (no coin reward)
       if (isSkippedGame) {
-        // Skip: advance level but no coins
-        await completeGame(true, finalTime, true); // 第三个参数true表示跳过coins奖励
+        // Skip: advance level but no coins (coins already handled in skip logic)
+        await updateGameData({ currentLevel: currentLevel + 1 });
       } else {
-        // Normal win: advance level and award coins
-        await completeGame(true, finalTime, false, currentRow);
+        // Normal win: advance level (coins already awarded in processGuess)
+        await updateGameData({ currentLevel: currentLevel + 1 });
       }
       
       // Reset celebration state

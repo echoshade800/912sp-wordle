@@ -40,7 +40,10 @@ class StorageUtils {
     try {
       const oldData = await this.getData();
       const mergedData = oldData ? { ...oldData, ...newData } : newData;
+      console.log('StorageUtils', `${this.miniAppName}info`, 'setData to local storage', mergedData);
       await AsyncStorage.setItem(`${this.miniAppName}info`, JSON.stringify(mergedData));
+      const val2 = await AsyncStorage.getItem(`${this.miniAppName}info`);
+      console.log('StorageUtils', `${this.miniAppName}info`, 'getData from local storage', val2); 
       return true;
     } catch (error) {
       console.error('Failed to set info data:', error);
