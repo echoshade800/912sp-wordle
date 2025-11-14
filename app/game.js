@@ -90,7 +90,7 @@ const GameRulesModal = ({ visible, onClose }) => {
 
         <View style={styles.exampleSection}>
           <Image 
-            source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/example.webp' }}
+            source={require('../assets/images/example.webp')}
             style={styles.exampleImage}
             resizeMode="contain"
           />
@@ -860,7 +860,7 @@ export default function GameScreen() {
           <Text style={styles.rewardTitle}>Level Complete! 🎉</Text>
           <View style={styles.rewardContent}>
             <Image 
-              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+              source={require('../assets/images/coins.webp')}
               style={styles.coinIcon}
             />
             <Text style={styles.rewardAmount}>+{earnedCoins}</Text>
@@ -935,7 +935,7 @@ export default function GameScreen() {
         </View>
         <View style={styles.coinsInfo}>
           <Image 
-            source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+            source={require('../assets/images/coins.webp')}
             style={{ width: 20, height: 20 }}
           />
           <Text style={styles.coinsText}>{coins}</Text>
@@ -1031,14 +1031,14 @@ export default function GameScreen() {
             disabled={coins < 10 || isCelebrating || isFlipping}>
             <View style={styles.boosterIconContainer}>
               <Image 
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/dart.webp' }}
+                source={require('../assets/images/dart.webp')}
                 style={[styles.boosterIconImage, { opacity: canUseDart ? 1 : 0.3 }]}
                 resizeMode="contain"
               />
             </View>
             <View style={styles.boosterPriceContainer}>
               <Image 
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+                source={require('../assets/images/coins.webp')}
                 style={{ width: 10, height: 10 }}
               />
               <Text style={styles.boosterPriceText}>10</Text>
@@ -1052,14 +1052,14 @@ export default function GameScreen() {
           >
             <View style={styles.boosterIconContainer}>
               <Image 
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/hint.webp' }}
+                source={require('../assets/images/hint.webp')}
                 style={[styles.boosterIconImage, { opacity: canUseHint ? 1 : 0.3 }]}
                 resizeMode="contain"
               />
             </View>
             <View style={styles.boosterPriceContainer}>
               <Image 
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+                source={require('../assets/images/coins.webp')}
                 style={{ width: 10, height: 10 }}
               />
               <Text style={styles.boosterPriceText}>20</Text>
@@ -1084,14 +1084,14 @@ export default function GameScreen() {
         >
           <View style={styles.boosterIconContainer}>
             <Image 
-              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/skip.webp' }}
+              source={require('../assets/images/skip.webp')}
               style={[styles.boosterIconImage, { width: 84, height: 84 }, { opacity: canUseSkip ? 1 : 0.3 }]}
               resizeMode={'contain'}
             />
           </View>
           <View style={styles.boosterPriceContainer}>
             <Image 
-              source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+              source={require('../assets/images/coins.webp')}
               style={{ width: 10, height: 10 }}
             />
             <Text style={styles.boosterPriceText}>30</Text>

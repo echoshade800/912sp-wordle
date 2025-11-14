@@ -108,7 +108,7 @@ const GameRulesModal = ({ visible, onClose }) => {
             {/* EXAMPLE 部分 */}
             <View style={styles.exampleSection}>
               <Image
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/example.webp' }}
+                source={require('../assets/images/example.webp')}
                 style={styles.exampleImage}
                 resizeMode="contain"
               />
@@ -265,7 +265,7 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground 
-      source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/background.webp' }}
+      source={require('../assets/images/background.webp')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -318,7 +318,7 @@ export default function HomeScreen() {
               ]}
             >
               <Image 
-                source={{ uri: 'https://dzdbhsix5ppsc.cloudfront.net/monster/wordle1/coins.webp' }}
+                source={require('../assets/images/coins.webp')}
                 style={styles.coinIcon}
               />
               <Text style={styles.coinsText}>{coins}</Text>
