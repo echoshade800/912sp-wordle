@@ -82,24 +82,24 @@ export default function AboutScreen() {
 
           <View style={styles.boosterList}>
             <View style={styles.boosterItem}>
-              <Ionicons name="location" size={20} color="#ff6b35" />
+              <Ionicons name="search" size={20} color="#ff6b35" />
               <View style={styles.boosterInfo}>
-                <Text style={styles.boosterName}>Dart (15 coins)</Text>
+                <Text style={styles.boosterName}>Dart (10 coins)</Text>
                 <Text style={styles.boosterDesc}>Remove up to 3 incorrect letters from the keyboard</Text>
               </View>
             </View>
             <View style={styles.boosterItem}>
-              <Ionicons name="bulb" size={20} color="#ffd60a" />
+              <Ionicons name="target" size={20} color="#ffd60a" />
               <View style={styles.boosterInfo}>
-                <Text style={styles.boosterName}>Hint (25 coins)</Text>
-                <Text style={styles.boosterDesc}>Reveal and lock 1 correct letter position</Text>
+                <Text style={styles.boosterName}>Hint (20 coins)</Text>
+                <Text style={styles.boosterDesc}>Reveal and lock one correct letter position</Text>
               </View>
             </View>
             <View style={styles.boosterItem}>
               <Ionicons name="play-forward" size={20} color="#06d6a0" />
               <View style={styles.boosterInfo}>
-                <Text style={styles.boosterName}>Skip (50 coins)</Text>
-                <Text style={styles.boosterDesc}>Advance to the next level without completing current one</Text>
+                <Text style={styles.boosterName}>Skip (30 coins)</Text>
+                <Text style={styles.boosterDesc}>Skip current level and advance to the next one</Text>
               </View>
             </View>
           </View>

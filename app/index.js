@@ -84,24 +84,24 @@ const GameRulesModal = ({ visible, onClose }) => {
               </View>
 
               <View style={styles.ruleItem}>
-                <View style={[styles.ruleIcon, { backgroundColor: '#F1B544' }]}>
+                <View style={[styles.ruleIcon, { backgroundColor: '#E2605C' }]}>
                   <Ionicons name="search" size={16} color="white" />
                 </View>
-                <Text style={styles.ruleDescription}>Use "Hint" to reveal one correct letter.</Text>
+                <Text style={styles.ruleDescription}>Use "Dart" (10 coins) to remove up to 3 incorrect letters.</Text>
               </View>
 
               <View style={styles.ruleItem}>
-                <View style={[styles.ruleIcon, { backgroundColor: '#E2605C' }]}>
-                  <Text style={styles.ruleIconText}>?</Text>
+                <View style={[styles.ruleIcon, { backgroundColor: '#F1B544' }]}>
+                  <Ionicons name="target" size={16} color="white" />
                 </View>
-                <Text style={styles.ruleDescription}>Use "Dart" to remove three incorrect letters.</Text>
+                <Text style={styles.ruleDescription}>Use "Hint" (20 coins) to reveal one correct letter position.</Text>
               </View>
 
               <View style={styles.ruleItem}>
                 <View style={[styles.ruleIcon, { backgroundColor: '#4FB0E8' }]}>
                   <Ionicons name="play-forward" size={16} color="white" />
                 </View>
-                <Text style={styles.ruleDescription}>Use "Skip" to skip the current word with no penalties.</Text>
+                <Text style={styles.ruleDescription}>Use "Skip" (30 coins) to advance to the next level.</Text>
               </View>
             </View>
 
